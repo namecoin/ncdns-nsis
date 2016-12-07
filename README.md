@@ -1,4 +1,4 @@
 
 NSIS installer scripts for ncdns.
 
-Requires AccessControl plugin.
+Put `ncdns.exe` in `artifacts/`.

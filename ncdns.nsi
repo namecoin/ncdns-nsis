@@ -1,4 +1,3 @@
-!addplugindir "plugins"
 !ifndef NCDNS_PRODVER
   #!ifdef POSIX_BUILD
   !error "Must define NCDNS_PRODVER"
@@ -79,6 +78,8 @@ FunctionEnd
 # INSTALL SECTIONS
 ##############################################################################
 Var /GLOBAL Reinstalling
+Var /GLOBAL UnboundConfPath
+Var /GLOBAL UnboundFragmentLocation
 
 Section "ncdns" Sec_ncdns
   #SectionIn RO
@@ -89,6 +90,8 @@ Section "ncdns" Sec_ncdns
   Call Service
   Call Files
   Call ServiceStart
+  Call UnboundConfig
+
   AddSize 12288  # Disk space estimation.
 SectionEnd
 
@@ -96,6 +99,7 @@ SectionEnd
 # UNINSTALL SECTIONS
 ##############################################################################
 Section "Uninstall"
+  Call un.UnboundConfig
   Call un.Service
   Call un.Files
   Call un.Reg
@@ -138,10 +142,8 @@ Function Files
   File /oname=$INSTDIR\etc\ncdns.conf artifacts\ncdns.conf
 
   # Ensure only ncdns service and administrators can read ncdns.conf.
-  AccessControl::DisableFileInheritance "$INSTDIR\etc\ncdns.conf"
-  AccessControl::ClearOnFile "$INSTDIR\etc\ncdns.conf" "SYSTEM" "FullAccess"
-  AccessControl::GrantOnFile "$INSTDIR\etc\ncdns.conf" "Administrators" "FullAccess"
-  AccessControl::GrantOnFile "$INSTDIR\etc\ncdns.conf" "NT SERVICE\ncdns" "GenericRead"
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
 FunctionEnd
 
 Function un.Files
@@ -158,7 +160,7 @@ FunctionEnd
 ##############################################################################
 Function Service
   ${If} $Reinstalling = 1
-    nsExec::Exec 'sc stop ncdns'
+    nsExec::Exec 'net stop ncdns'
     nsExec::ExecToLog 'sc delete ncdns'
   ${EndIf}
 
@@ -175,14 +177,77 @@ Function Service
 FunctionEnd
 
 Function ServiceStart
-  nsExec::Exec 'sc start ncdns'
+  nsExec::Exec 'net start ncdns'
 FunctionEnd
 
 Function un.Service
-  nsExec::Exec 'sc stop ncdns'
+  nsExec::Exec 'net stop ncdns'
   nsExec::ExecToLog 'sc delete ncdns'
 FunctionEnd
 
+
+# UNBOUND CONFIGURATION
+##############################################################################
+Function UnboundConfig
+  # Detect dnssec-trigger installation.
+  ClearErrors
+  ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\DnssecTrigger" "InstallLocation"
+  IfErrors 0 found
+  ReadRegStr $UnboundConfPath HKLM "Software\DnssecTrigger" "InstallLocation"
+  IfErrors 0 found
+not_found:
+  StrCpy $UnboundConfPath ""
+  Return
+
+  # dnssec-trigger is installed. Adapt the Unbound config to include from a
+  # directory.
+found:
+  IfFileExists "$UnboundConfPath\unbound.conf" 0 not_found
+  CreateDirectory "$UnboundConfPath\unbound.conf.d"
+
+  # Unbound on Windows doesn't appear to support globbing include directives,
+  # contrary to the documentation. So use this cludge instead.
+  File /oname=$UnboundConfPath\rebuild-confd-list.cmd rebuild-confd-list.cmd
+  nsExec::ExecToLog '"$UnboundConfPath\rebuild-confd-list.cmd"'
+
+  File /oname=$TEMP\configunbound.ps1 configunbound.ps1
+  FileOpen $4 "$TEMP\configunbound.cmd" w
+  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$TEMP\configunbound.ps1" '
+  FileWrite $4 '"$UnboundConfPath\unbound.conf" "$UnboundConfPath\confd-list.conf" < nul'
+  FileClose $4
+  nsExec::ExecToLog '$TEMP\configunbound.cmd'
+  Delete $TEMP\configunbound.ps1
+  Delete $TEMP\configunbound.cmd
+
+  # Add a config fragment in the newly configured directory.
+  WriteRegStr HKLM "Software\Namecoin\ncdns" "UnboundFragmentLocation" "$UnboundConfPath\unbound.conf.d"
+  File /oname=$UnboundConfPath\unbound.conf.d\ncdns-inst.conf ncdns-inst.conf
+  nsExec::ExecToLog '"$UnboundConfPath\rebuild-confd-list.cmd"'
+
+  # Windows, unbelievably, doesn't appear to have any way to restart a service
+  # from the command line. stop followed by start isn't the same as a restart
+  # because it doesn't restart dependencies automatically.
+  nsExec::ExecToLog 'net stop /yes unbound'
+  nsExec::ExecToLog 'net start unbound'
+  nsExec::ExecToLog 'net start dnssectrigger'
+FunctionEnd
+
+Function un.UnboundConfig
+  ClearErrors
+  ReadRegStr $UnboundFragmentLocation HKLM "Software\Namecoin\ncdns" "UnboundFragmentLocation"
+  IfErrors not_found 0
+
+  # Delete the fragment which was installed, but do not deconfigure the
+  # configuration directory.
+  Delete $UnboundFragmentLocation\ncdns-inst.conf
+  nsExec::ExecToLog '"$UnboundFragmentLocation\..\rebuild-confd-list.cmd"'
+
+  nsExec::ExecToLog 'net stop /yes unbound'
+  nsExec::ExecToLog 'net start unbound'
+  nsExec::ExecToLog 'net start dnssectrigger'
+
+not_found:
+FunctionEnd
 
 # REINSTALL TESTING
 ##############################################################################
