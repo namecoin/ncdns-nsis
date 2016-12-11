@@ -1,0 +1,6 @@
+- Figure out why OS version check doesn't work properly
+
+- Confirm reproducbility of build process
+
+- namecoin.ico is buggy (is a black circle at many sizes); a new namecoin.ico
+  will need to be sourced.

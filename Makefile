@@ -17,3 +17,6 @@ endif
 build/ncdns-install.exe: ncdns.nsi artifacts/ncdns.exe artifacts/ncdns.conf
 	@mkdir -p build/
 	$(MAKENSIS) $(NSISFLAGS) -DPOSIX_BUILD=1 -DNCDNS_PRODVER=$(NCDNS_PRODVER) "$<"
+
+clean:
+	rm build/ncdns-install.exe

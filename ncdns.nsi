@@ -15,6 +15,10 @@
 # INSTALLER SETTINGS
 ##############################################################################
 OutFile "build\ncdns-install.exe"
+
+# Jeremy Rand thinks people shouldn't change this because it might affect build
+# determinism, so any PR which changes this should probably highlight him or
+# something.
 SetCompressor /SOLID lzma
 
 !define MUI_ICON "media\namecoin.ico"
