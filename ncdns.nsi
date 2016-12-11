@@ -67,7 +67,8 @@ VIAddVersionKey "Comments" "ncdns Installer"
 
 Function .onInit
   ${IfNot} ${AtLeastWinXP}
-    MessageBox "MB_OK|MB_ICONSTOP" "ncdns requires Windows Vista or later."
+    ## This is always firing. Why?
+    #MessageBox "MB_OK|MB_ICONSTOP" "ncdns requires Windows Vista or later."
     #Abort
   ${EndIf}
 
@@ -170,7 +171,7 @@ Function Service
   nsExec::ExecToLog 'sc description ncdns "Namecoin ncdns daemon"'
   # Restrict privileges. 'sc privs' interprets an empty list as meaning no
   # privilege restriction... this one seems low-risk.
-  nsExec::ExecToLog 'sc privs ncdns "SeCreateGlobalPrivilege"'
+  nsExec::ExecToLog 'sc privs ncdns "SeChangeNotifyPrivilege"'
   # Set the proper image path manually rather than try to escape it properly
   # above.
   WriteRegStr HKLM "System\CurrentControlSet\Services\ncdns" "ImagePath" '"$INSTDIR\bin\ncdns.exe" "-conf=$INSTDIR\etc\ncdns.conf"'
@@ -206,7 +207,7 @@ found:
   CreateDirectory "$UnboundConfPath\unbound.conf.d"
 
   # Unbound on Windows doesn't appear to support globbing include directives,
-  # contrary to the documentation. So use this cludge instead.
+  # contrary to the documentation. So use this kludge instead.
   File /oname=$UnboundConfPath\rebuild-confd-list.cmd rebuild-confd-list.cmd
   nsExec::ExecToLog '"$UnboundConfPath\rebuild-confd-list.cmd"'
 
