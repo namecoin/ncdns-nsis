@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+  <head>
+    <title>Tutorial</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+      body { background-color: pink; }
+    </style>
+  </head>
+  <body>
+    <p>This is the tutorial...</p>
+    <p><a href="#" id="confirm_link">Confirm</a></p>
+    <p><a href="#" id="reject_link">Reject</a></p>
+
+    <script type="application/javascript">
+      var confirm_link = document.getElementById('confirm_link');
+      confirm_link.addEventListener('click', function(e) {
+        document.title = 'CMD_CONFIRMED';
+      });
+      var reject_link = document.getElementById('reject_link');
+      reject_link.addEventListener('click', function(e) {
+        document.title = 'CMD_REJECTED';
+      });
+    </script>
+  </body>
+</html>

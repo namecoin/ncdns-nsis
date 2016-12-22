@@ -90,10 +90,13 @@ Section "ncdns" Sec_ncdns
   #SectionIn RO
 
   SetOutPath $INSTDIR
+  InitPluginsDir
   Call ReinstallCheck
   Call Reg
   Call Service
   Call Files
+  Call TrustConfig
+  Call FilesSecure
   Call ServiceStart
   Call UnboundConfig
 
@@ -105,6 +108,7 @@ SectionEnd
 ##############################################################################
 Section "Uninstall"
   Call un.UnboundConfig
+  Call un.TrustConfig
   Call un.Service
   Call un.Files
   Call un.Reg
@@ -145,7 +149,9 @@ Function Files
   File /oname=$INSTDIR\namecoin.ico media\namecoin.ico
   File /oname=$INSTDIR\bin\ncdns.exe artifacts\ncdns.exe
   File /oname=$INSTDIR\etc\ncdns.conf artifacts\ncdns.conf
+FunctionEnd
 
+Function FilesSecure
   # Ensure only ncdns service and administrators can read ncdns.conf.
   nsExec::ExecToLog 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
@@ -215,14 +221,17 @@ found:
   File /oname=$UnboundConfPath\rebuild-confd-list.cmd rebuild-confd-list.cmd
   nsExec::ExecToLog '"$UnboundConfPath\rebuild-confd-list.cmd"'
 
-  File /oname=$TEMP\configunbound.ps1 configunbound.ps1
-  FileOpen $4 "$TEMP\configunbound.cmd" w
-  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$TEMP\configunbound.ps1" '
+  File /oname=$PLUGINSDIR\configunbound.ps1 configunbound.ps1
+  # We execute the script via a dynamically written batch file because Windows
+  # command line escaping is very strange and has been behaving strangely if
+  # done directly from NSIS. This behaves consistently.
+  FileOpen $4 "$PLUGINSDIR\configunbound.cmd" w
+  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configunbound.ps1" '
   FileWrite $4 '"$UnboundConfPath\unbound.conf" "$UnboundConfPath\confd-list.conf" < nul'
   FileClose $4
-  nsExec::ExecToLog '$TEMP\configunbound.cmd'
-  Delete $TEMP\configunbound.ps1
-  Delete $TEMP\configunbound.cmd
+  nsExec::ExecToLog '$PLUGINSDIR\configunbound.cmd'
+  Delete $PLUGINSDIR\configunbound.ps1
+  Delete $PLUGINSDIR\configunbound.cmd
 
   # Add a config fragment in the newly configured directory.
   WriteRegStr HKLM "Software\Namecoin\ncdns" "UnboundFragmentLocation" "$UnboundConfPath\unbound.conf.d"
@@ -252,6 +261,69 @@ Function un.UnboundConfig
   nsExec::ExecToLog 'net start dnssectrigger'
 
 not_found:
+FunctionEnd
+
+
+# REGISTRY PERMISSION CONFIGURATION FOR NCDNS TRUST INJECTION
+##############################################################################
+Function TrustConfig
+  IfFileExists "$LOCALAPPDATA\Google\Chrome\User Data" found 0
+  IfFileExists "$LOCALAPPDATA\Chromium\User Data" found 0
+  Return
+
+found:
+  MessageBox MB_ICONQUESTION|MB_YESNO "You currently have Chromium or Google Chrome installed.  ncdns can enable HTTPS for Namecoin websites in Chromium/Chrome.  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).  If you plan to access Namecoin-enabled websites on this computer from any web browser other than Chromium, Chrome, Firefox, or Tor Browser, you should not enable HTTPS for Namecoin websites in Chromium/Chrome.$\n$\nWould you like to enable HTTPS for Namecoin websites in Chromium/Chrome?" /SD IDNO IDYES chose_yes IDNO chose_no
+chose_no:
+  Return
+
+found_again:
+  Delete "$PLUGINSDIR\tutorial-confirm"
+  Goto found
+
+chose_yes:
+  Delete $PLUGINSDIR\tutorial-confirm
+  IfFileExists $PLUGINSDIR\tutorial-confirm found 0
+  File /oname=$PLUGINSDIR\tutorial.ps1 tutorial.ps1
+  File /oname=$PLUGINSDIR\tutorial.html tutorial.html
+  FileOpen $4 "$PLUGINSDIR\tutorial.cmd" w
+  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -sta -file "$PLUGINSDIR\tutorial.ps1" "$PLUGINSDIR\tutorial.html" "$PLUGINSDIR\tutorial-confirm" < nul'
+  FileClose $4
+  nsExec::ExecToLog '"$PLUGINSDIR\tutorial.cmd"'
+
+  Delete $PLUGINSDIR\tutorial.cmd
+  Delete $PLUGINSDIR\tutorial.ps1
+  Delete $PLUGINSDIR\tutorial.html
+  IfFileExists "$PLUGINSDIR\tutorial-confirm" 0 found_again
+  Delete $PLUGINSDIR\tutorial-confirm
+
+  # Configure permissions
+  File /oname=$PLUGINSDIR\regpermrun.ps1 regpermrun.ps1
+  File /oname=$PLUGINSDIR\regperm.ps1 regperm.ps1
+  FileOpen $4 "$PLUGINSDIR\regpermrun.cmd" w
+  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\regpermrun.ps1" install < nul'
+  FileClose $4
+  nsExec::ExecToLog '"$PLUGINSDIR\regpermrun.cmd"'
+  Delete $PLUGINSDIR\regpermrun.cmd
+  Delete $PLUGINSDIR\regpermrun.ps1
+  Delete $PLUGINSDIR\regperm.ps1
+
+  FileOpen $4 "$INSTDIR\etc\ncdns.conf" a
+  FileSeek $4 0 END
+  FileWrite $4 '$\r$\n$\r$\n## ++TRUST++$\r$\n## Added automatically by installer because truststore mode was enabled.$\r$\n[certstore]$\r$\ncryptoapi=true$\r$\n## ++/TRUST++$\r$\n$\r$\n'
+  FileClose $4
+FunctionEnd
+
+Function un.TrustConfig
+  # Keep this the same as the above (NSIS forces function duplication for the uninstaller, alas.)
+  File /oname=$PLUGINSDIR\regpermrun.ps1 regpermrun.ps1
+  File /oname=$PLUGINSDIR\regperm.ps1 regperm.ps1
+  FileOpen $4 "$PLUGINSDIR\regpermrun.cmd" w
+  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\regpermrun.ps1" uninstall < nul'
+  FileClose $4
+  nsExec::ExecToLog '"$PLUGINSDIR\regpermrun.cmd"'
+  Delete $PLUGINSDIR\regpermrun.cmd
+  Delete $PLUGINSDIR\regpermrun.ps1
+  Delete $PLUGINSDIR\regperm.ps1
 FunctionEnd
 
 # REINSTALL TESTING
