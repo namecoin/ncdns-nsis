@@ -36,7 +36,11 @@ SetCompressor /SOLID lzma
 
 !insertmacro MUI_LANGUAGE English
 
-InstallDir $PROGRAMFILES\ncdns
+!ifdef NCDNS_64BIT
+  InstallDir $PROGRAMFILES64\ncdns
+!else
+  InstallDir $PROGRAMFILES\ncdns
+!endif
 InstallDirRegKey HKLM "Software\Namecoin\ncdns" "InstallPath"
 ShowInstDetails show
 ShowUninstDetails show
@@ -46,7 +50,7 @@ XPStyle on
 CRCCheck on
 
 # Branding.
-Name "ncdns Windows Installer"
+Name "ncdns for Windows"
 BrandingText "Namecoin"
 
 # Installer .exe version tables.
