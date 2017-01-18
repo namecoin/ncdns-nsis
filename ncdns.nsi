@@ -153,6 +153,16 @@ Function Files
   File /oname=$INSTDIR\namecoin.ico media\namecoin.ico
   File /oname=$INSTDIR\bin\ncdns.exe artifacts\ncdns.exe
   File /oname=$INSTDIR\etc\ncdns.conf artifacts\ncdns.conf
+
+#!if /FileExists "artifacts\ncdt.exe"
+# This is listed in NSIS.chm but doesn't appear to be supported on the POSIX
+# makensis version I'm using. Bleh.
+#!endif
+
+  File /nonfatal /oname=$INSTDIR\bin\ncdt.exe artifacts\ncdt.exe
+  File /nonfatal /oname=$INSTDIR\bin\ncdumpzone.exe artifacts\ncdumpzone.exe
+  File /nonfatal /oname=$INSTDIR\bin\generate_nmc_cert.exe artifacts\generate_nmc_cert.exe
+  File /nonfatal /oname=$INSTDIR\bin\q.exe artifacts\q.exe
 FunctionEnd
 
 Function FilesSecure
@@ -163,6 +173,11 @@ FunctionEnd
 
 Function un.Files
   Delete $INSTDIR\bin\ncdns.exe
+  Delete $INSTDIR\bin\ncdt.exe
+  Delete $INSTDIR\bin\ncdumpzone.exe
+  Delete $INSTDIR\bin\generate_nmc_cert.exe
+  Delete $INSTDIR\bin\q.exe
+
   Delete $INSTDIR\etc\ncdns.conf
   RMDir $INSTDIR\bin
   RMDir $INSTDIR\etc
@@ -211,12 +226,14 @@ Function UnboundConfig
   ReadRegStr $UnboundConfPath HKLM "Software\DnssecTrigger" "InstallLocation"
   IfErrors 0 found
 not_found:
+  DetailPrint "*** dnssec-trigger installation was NOT found, not configuring Unbound."
   StrCpy $UnboundConfPath ""
   Return
 
   # dnssec-trigger is installed. Adapt the Unbound config to include from a
   # directory.
 found:
+  DetailPrint "*** dnssec-trigger installation WAS found, configuring Unbound."
   IfFileExists "$UnboundConfPath\unbound.conf" 0 not_found
   CreateDirectory "$UnboundConfPath\unbound.conf.d"
 
@@ -273,11 +290,13 @@ FunctionEnd
 Function TrustConfig
   IfFileExists "$LOCALAPPDATA\Google\Chrome\User Data" found 0
   IfFileExists "$LOCALAPPDATA\Chromium\User Data" found 0
+  DetailPrint "*** Chrome/Chromium NOT detected, not configuring trust."
   Return
 
 found:
   MessageBox MB_ICONQUESTION|MB_YESNO "You currently have Chromium or Google Chrome installed.  ncdns can enable HTTPS for Namecoin websites in Chromium/Chrome.  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).  If you plan to access Namecoin-enabled websites on this computer from any web browser other than Chromium, Chrome, Firefox, or Tor Browser, you should not enable HTTPS for Namecoin websites in Chromium/Chrome.$\n$\nWould you like to enable HTTPS for Namecoin websites in Chromium/Chrome?" /SD IDNO IDYES chose_yes IDNO chose_no
 chose_no:
+  DetailPrint "*** Chrome/Chromium was detected, but user elected not to configure it."
   Return
 
 found_again:
@@ -315,6 +334,8 @@ chose_yes:
   FileSeek $4 0 END
   FileWrite $4 '$\r$\n$\r$\n## ++TRUST++$\r$\n## Added automatically by installer because truststore mode was enabled.$\r$\n[certstore]$\r$\ncryptoapi=true$\r$\n## ++/TRUST++$\r$\n$\r$\n'
   FileClose $4
+
+  DetailPrint "*** Chrome/Chromium WAS configured after user confirmation."
 FunctionEnd
 
 Function un.TrustConfig
