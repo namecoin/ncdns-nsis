@@ -82,6 +82,28 @@ Function .onInit
 
   # Make sections mandatory.
   SectionSetFlags ${Sec_ncdns} 25
+
+  # Check that MSVC8 runtime is installed for dnssec-keygen.
+  FindFirst $0 $1 $WINDIR\WinSxS\x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.*
+  StrCmp $1 "" notfound
+  Goto found
+
+notfound:
+  FindClose $0
+  MessageBox "MB_OK|MB_ICONSTOP" "ncdns for Windows requires the Microsoft Visual C 8.0 runtime.$\n$\nYou can download it from:$\nhttps://www.microsoft.com/en-us/download/details.aspx?id=5638"
+  ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=5638"
+  Abort
+
+found:
+  FindClose $0
+
+  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.4027_none_d08a21a2442db2dc
+  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.4053_none_d08d7da0442a985d
+  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.42_none_db5f52fb98cb24ad
+  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.4940_none_d08cc06a442b34fc
+  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.6195_none_d09154e044272b9a
+  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.6229_none_d089f796442de10e
+  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.762_none_10b2f55f9bffb8f8
 FunctionEnd
 
 # INSTALL SECTIONS
@@ -99,6 +121,7 @@ Section "ncdns" Sec_ncdns
   Call Reg
   Call Service
   Call Files
+  Call KeyConfig
   Call TrustConfig
   Call FilesSecure
   Call ServiceStart
@@ -154,6 +177,12 @@ Function Files
   File /oname=$INSTDIR\bin\ncdns.exe artifacts\ncdns.exe
   File /oname=$INSTDIR\etc\ncdns.conf artifacts\ncdns.conf
 
+  File /oname=$INSTDIR\bin\dnssec-keygen.exe artifacts\dnssec-keygen.exe
+  File /oname=$INSTDIR\bin\libisc.dll artifacts\libisc.dll
+  File /oname=$INSTDIR\bin\libdns.dll artifacts\libdns.dll
+  File /oname=$INSTDIR\bin\libeay32.dll artifacts\libeay32.dll
+  File /oname=$INSTDIR\bin\libxml2.dll artifacts\libxml2.dll
+
 #!if /FileExists "artifacts\ncdt.exe"
 # This is listed in NSIS.chm but doesn't appear to be supported on the POSIX
 # makensis version I'm using. Bleh.
@@ -169,22 +198,45 @@ Function FilesSecure
   # Ensure only ncdns service and administrators can read ncdns.conf.
   nsExec::ExecToLog 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\bit.private" /reset'
+  nsExec::ExecToLog 'icacls "$INSTDIR\bit.key" /reset'
 FunctionEnd
 
 Function un.Files
   Delete $INSTDIR\bin\ncdns.exe
+  Delete $INSTDIR\bin\dnssec-keygen.exe
+  Delete $INSTDIR\bin\libisc.dll
+  Delete $INSTDIR\bin\libdns.dll
+  Delete $INSTDIR\bin\libeay32.dll
+  Delete $INSTDIR\bin\libxml2.dll
   Delete $INSTDIR\bin\ncdt.exe
   Delete $INSTDIR\bin\ncdumpzone.exe
   Delete $INSTDIR\bin\generate_nmc_cert.exe
   Delete $INSTDIR\bin\q.exe
 
   Delete $INSTDIR\etc\ncdns.conf
+  Delete $INSTDIR\etc\bit.private
+  Delete $INSTDIR\bit.key
   RMDir $INSTDIR\bin
   RMDir $INSTDIR\etc
   Delete $INSTDIR\namecoin.ico
   Delete $INSTDIR\uninst.exe
 FunctionEnd
 
+
+# FILE INSTALLATION/UNINSTALLATION
+##############################################################################
+Function KeyConfig
+  DetailPrint "Generating DNSSEC key..."
+  File /oname=$PLUGINSDIR\keyconfig.ps1 keyconfig.ps1
+  FileOpen $4 "$PLUGINSDIR\keyconfig.cmd" w
+  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\keyconfig.ps1" '
+  FileWrite $4 '"$INSTDIR" < nul'
+  FileClose $4
+  nsExec::ExecToLog '$PLUGINSDIR\keyconfig.cmd'
+  Delete $PLUGINSDIR\keyconfig.ps1
+  Delete $PLUGINSDIR\keyconfig.cmd
+FunctionEnd
 
 # SERVICE INSTALLATION/UNINSTALLATION
 ##############################################################################
@@ -242,13 +294,19 @@ found:
   File /oname=$UnboundConfPath\rebuild-confd-list.cmd rebuild-confd-list.cmd
   nsExec::ExecToLog '"$UnboundConfPath\rebuild-confd-list.cmd"'
 
+  # The configunbound.ps1 performs two functions:
+  #   1. It ensures an appropriate include: line is added to unbound.conf.
+  #   2. It fills in the path in this file and renames it.
+  File /oname=$UnboundConfPath\unbound.conf.d\ncdns-inst.conf.in ncdns-inst.conf.in
+
+  # Execute configunbound.ps1.
   File /oname=$PLUGINSDIR\configunbound.ps1 configunbound.ps1
   # We execute the script via a dynamically written batch file because Windows
   # command line escaping is very strange and has been behaving strangely if
   # done directly from NSIS. This behaves consistently.
   FileOpen $4 "$PLUGINSDIR\configunbound.cmd" w
   FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configunbound.ps1" '
-  FileWrite $4 '"$UnboundConfPath\unbound.conf" "$UnboundConfPath\confd-list.conf" < nul'
+  FileWrite $4 '"$UnboundConfPath" "$INSTDIR" < nul'
   FileClose $4
   nsExec::ExecToLog '$PLUGINSDIR\configunbound.cmd'
   Delete $PLUGINSDIR\configunbound.ps1
@@ -256,7 +314,6 @@ found:
 
   # Add a config fragment in the newly configured directory.
   WriteRegStr HKLM "Software\Namecoin\ncdns" "UnboundFragmentLocation" "$UnboundConfPath\unbound.conf.d"
-  File /oname=$UnboundConfPath\unbound.conf.d\ncdns-inst.conf ncdns-inst.conf
   nsExec::ExecToLog '"$UnboundConfPath\rebuild-confd-list.cmd"'
 
   # Windows, unbelievably, doesn't appear to have any way to restart a service
