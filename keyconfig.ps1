@@ -3,8 +3,12 @@ $ncdns_path = $args[0]
 cd "$ncdns_path\etc"
 del Kbit.+*.key
 del Kbit.+*.private
-del ..\bit.key
-del bit.private
+if (Test-Path "..\bit.key") {
+  del ..\bit.key
+}
+if (Test-Path "bit.private") {
+  del bit.private
+}
 
 & "$ncdns_path\bin\dnssec-keygen.exe" -a ECDSAP256SHA256 -3 bit.
 move Kbit.+*.key ..\bit.key
