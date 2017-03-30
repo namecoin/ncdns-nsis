@@ -12,3 +12,4 @@ Put the following files in `artifacts/`:
   - Optionally, add `ncdt.exe` and `ncdumpzone.exe` from ncdns.
   - `generate_nmc_cert.exe` and `q.exe` will also be copied if they are present.
 
+Licenced under the MIT License.
