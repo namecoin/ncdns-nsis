@@ -81,7 +81,7 @@ Function .onInit
   ${EndIf}
 
   # Make sections mandatory.
-  SectionSetFlags ${Sec_ncdns} 25
+  Call ConfigSections
 
   # Check that MSVC8 runtime is installed for dnssec-keygen.
   FindFirst $0 $1 $WINDIR\WinSxS\x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.*
@@ -198,7 +198,11 @@ Function FilesSecure
   # Ensure only ncdns service and administrators can read ncdns.conf.
   nsExec::ExecToLog 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\bit.private" /reset'
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk" /reset'
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.private" /reset'
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.key" /reset'
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ksk" /reset'
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ksk\bit.private" /reset'
   nsExec::ExecToLog 'icacls "$INSTDIR\bit.key" /reset'
 FunctionEnd
 
@@ -215,8 +219,10 @@ Function un.Files
   Delete $INSTDIR\bin\q.exe
 
   Delete $INSTDIR\etc\ncdns.conf
-  Delete $INSTDIR\etc\bit.private
+  Delete $INSTDIR\etc\ksk\bit.private
   Delete $INSTDIR\bit.key
+  Delete $INSTDIR\etc\zsk\bit.private
+  Delete $INSTDIR\etc\zsk\bit.key
   RMDir $INSTDIR\bin
   RMDir $INSTDIR\etc
   Delete $INSTDIR\namecoin.ico
@@ -408,6 +414,7 @@ Function un.TrustConfig
   Delete $PLUGINSDIR\regperm.ps1
 FunctionEnd
 
+
 # REINSTALL TESTING
 ##############################################################################
 Function ReinstallCheck
@@ -417,4 +424,11 @@ Function ReinstallCheck
   IfErrors 0 reinstalling
   StrCpy $Reinstalling 0 ;; new install
 reinstalling:
+FunctionEnd
+
+
+#
+##############################################################################
+Function ConfigSections
+  SectionSetFlags ${Sec_ncdns} 25
 FunctionEnd
