@@ -116,6 +116,7 @@ Var /GLOBAL UnboundConfPath
 Var /GLOBAL UnboundFragmentLocation
 Var /GLOBAL DNSSECTriggerUninstallCommand
 Var /GLOBAL NamecoinCoreUninstallCommand
+Var /GLOBAL NamecoinCoreDataDir
 
 Section "ncdns" Sec_ncdns
   #SectionIn RO
@@ -125,6 +126,7 @@ Section "ncdns" Sec_ncdns
   Call ReinstallCheck
   Call Reg
   Call DNSSECTrigger
+  Call NamecoinCoreConfig
   Call NamecoinCore
   Call Service
   Call Files
@@ -226,6 +228,44 @@ found:
 done:
   # Didn't install/not uninstalling DNSSEC Trigger.
 !endif
+FunctionEnd
+
+
+# NAMECOIN CORE CONFIG
+##############################################################################
+Function NamecoinCoreConfig
+  # We have to set 'server=1' in namecoin.conf. We can use cookies to get the
+  # rest, so that's all we need.
+  #
+  # The Namecoin Core installer provides the user an option to launch Namecoin
+  # Core at the end. Therefore, we must do this before we launch the Namecoin Core
+  # installer.
+  #
+  ClearErrors
+  ReadRegStr $NamecoinCoreDataDir HKCU "Software\Namecoin\Namecoin-Qt" "strDataDir"
+  IfErrors 0 haveDataDir
+
+  # We need to set the data directory pre-emptively so we can put a new namecoin.conf
+  # there.
+  StrCpy $NamecoinCoreDataDir "$APPDATA\Namecoin"
+  WriteRegStr HKCU "Software\Namecoin\Namecoin-Qt" "strDataDir" $NamecoinCoreDataDir
+
+haveDataDir:
+  CreateDirectory $NamecoinCoreDataDir
+
+  # Now we need to make sure namecoin.conf exists and has 'server=1'.
+  # We'll do this with a powershell script, much as we do for configuring Unbound.
+
+  # Execute confignamecoinconf.ps1.
+  File /oname=$PLUGINSDIR\confignamecoinconf.ps1 confignamecoinconf.ps1
+  FileOpen $4 "$PLUGINSDIR\confignamecoinconf.cmd" w
+  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\confignamecoinconf.ps1" '
+  FileWrite $4 '"$NamecoinCoreDataDir" < nul'
+  FileClose $4
+  nsExec::ExecToLog '$PLUGINSDIR\confignamecoinconf.cmd'
+  Delete $PLUGINSDIR\confignamecoinconf.ps1
+  Delete $PLUGINSDIR\confignamecoinconf.cmd
+
 FunctionEnd
 
 
