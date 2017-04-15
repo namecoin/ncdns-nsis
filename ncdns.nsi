@@ -12,6 +12,7 @@
 
 !include "MUI2.nsh"
 
+
 # INSTALLER SETTINGS
 ##############################################################################
 OutFile "build\ncdns-install.exe"
@@ -65,9 +66,10 @@ VIAddVersionKey "FileVersion" "${NCDNS_PRODVER}"
 !endif
 VIAddVersionKey "OriginalFilename" "ncdns-install.exe"
 VIAddVersionKey "CompanyName" "Namecoin"
-VIAddVersionKey "LegalCopyright" "2016 Hugo Landau <hlandau@devever.net>"
+VIAddVersionKey "LegalCopyright" "2017 Hugo Landau <hlandau@devever.net>"
 VIAddVersionKey "LegalTrademarks" "ncdns, Namecoin"
 VIAddVersionKey "Comments" "ncdns Installer"
+
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -106,11 +108,14 @@ found:
   #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.762_none_10b2f55f9bffb8f8
 FunctionEnd
 
+
 # INSTALL SECTIONS
 ##############################################################################
 Var /GLOBAL Reinstalling
 Var /GLOBAL UnboundConfPath
 Var /GLOBAL UnboundFragmentLocation
+Var /GLOBAL DNSSECTriggerUninstallCommand
+Var /GLOBAL NamecoinCoreUninstallCommand
 
 Section "ncdns" Sec_ncdns
   #SectionIn RO
@@ -119,6 +124,8 @@ Section "ncdns" Sec_ncdns
   InitPluginsDir
   Call ReinstallCheck
   Call Reg
+  Call DNSSECTrigger
+  Call NamecoinCore
   Call Service
   Call Files
   Call KeyConfig
@@ -138,6 +145,8 @@ Section "Uninstall"
   Call un.TrustConfig
   Call un.Service
   Call un.Files
+  Call un.NamecoinCore
+  Call un.DNSSECTrigger
   Call un.Reg
   RMDir "$INSTDIR"
 SectionEnd
@@ -164,6 +173,117 @@ FunctionEnd
 Function un.Reg
   DeleteRegKey HKLM "Software\Namecoin\ncdns"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns"
+FunctionEnd
+
+
+# DNSSEC TRIGGER CHAIN INSTALLATION
+##############################################################################
+Function DNSSECTrigger
+!ifndef NO_DNSSEC_TRIGGER
+  ClearErrors
+  ReadRegDWORD $0 HKLM "System\CurrentControlSet\Services\DNSSECTrigger" "Type"
+  IfErrors 0 done
+
+  # Install DNSSEC Trigger
+  DetailPrint "Installing DNSSEC Trigger..."
+  File /oname=$TEMP\dnssec_trigger_setup.exe artifacts\dnssec_trigger_setup.exe
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledDNSSECTrigger" 1
+  ExecWait $TEMP\dnssec_trigger_setup.exe
+  Delete /REBOOTOK $TEMP\dnssec_trigger_setup.exe
+
+  # Already have DNSSEC Trigger
+done:
+!endif
+FunctionEnd
+
+Function un.DNSSECTrigger
+!ifndef NO_DNSSEC_TRIGGER
+  # Determine if we were responsible for installing DNSSEC Trigger; if so, we
+  # should offer to uninstall it.
+  ClearErrors
+  ReadRegDWORD $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledDNSSECTrigger"
+  IfErrors done
+  IntCmp $0 0 done
+
+  # Detect DNSSEC Trigger uninstall command. If we cannot find it, don't offer
+  # to uninstall it, as we don't know how.
+  ClearErrors
+  ReadRegStr $DNSSECTriggerUninstallCommand HKLM "Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\DnssecTrigger" "QuietUninstallString"
+  IfErrors 0 found
+  ReadRegStr $DNSSECTriggerUninstallCommand HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DnssecTrigger" "QuietUninstallString"
+  IfErrors 0 found
+  Goto done
+ 
+found:
+  # Ask the user if they want to uninstall DNSSEC Trigger.
+  MessageBox MB_YESNO|MB_ICONQUESTION "When you installed ncdns for Windows, DNSSEC Trigger was installed automatically as a necessary dependency of ncdns for Windows. Would you like to remove it? If you leave it in place, you will not be able to connect to .bit domains, but will still enjoy DNSSEC-secured domain name lookups.$\n$\nSelect Yes to remove DNSSEC Trigger." IDYES 0 IDNO done
+
+  # Uninstall DNSSEC Trigger.
+  DetailPrint "Uninstalling DNSSEC Trigger... $DNSSECTriggerUninstallCommand"
+  ExecWait $DNSSECTriggerUninstallCommand
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledDNSSECTrigger"
+
+done:
+  # Didn't install/not uninstalling DNSSEC Trigger.
+!endif
+FunctionEnd
+
+
+# NAMECOIN CORE CHAIN INSTALLATION
+##############################################################################
+Function NamecoinCore
+!ifndef NO_NAMECOIN_CORE
+  ClearErrors
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Namecoin Core (32-bit)" "UninstallString"
+  IfErrors 0 done
+  ClearErrors
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Namecoin Core (64-bit)" "UninstallString"
+  IfErrors 0 done
+
+  # Install Namecoin Core
+  DetailPrint "Installing Namecoin Core..."
+!ifdef NCDNS_64BIT
+  File /oname=$TEMP\namecoin-setup-unsigned.exe artifacts\namecoin-win64-setup-unsigned.exe
+!else
+  File /oname=$TEMP\namecoin-setup-unsigned.exe artifacts\namecoin-win32-setup-unsigned.exe
+!endif
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore" 1
+  ExecWait $TEMP\namecoin-setup-unsigned.exe
+  Delete /REBOOTOK $TEMP\namecoin-setup-unsigned.exe
+
+  # Already have Namecoin Core
+  done:
+!endif
+FunctionEnd
+
+Function un.NamecoinCore
+!ifndef NO_NAMECOIN_CORE
+  # Determine if we were responsible for installing Namecoin Core; if so, we
+  # should uninstall it.
+  ClearErrors
+  ReadRegDWORD $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore"
+  IfErrors done
+  IntCmp $0 0 done
+
+  # Detect Namecoin Core uninstall command. If we cannot find it, don't offer
+  # to uninstall it, as we don't know how.
+  ClearErrors
+!ifdef NCDNS_64BIT
+  ReadRegStr $NamecoinCoreUninstallCommand HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Namecoin Core (64-bit)" "UninstallString"
+!else
+  ReadRegStr $NamecoinCoreUninstallCommand HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Namecoin Core (32-bit)" "UninstallString"
+!endif
+  IfErrors 0 found
+  Goto done
+
+found:
+  DetailPrint "Uninstalling Namecoin Core... $NamecoinCoreUninstallCommand"
+  ExecWait $NamecoinCoreUninstallCommand
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore"
+
+done:
+  # Didn't install Namecoin Core.
+!endif
 FunctionEnd
 
 
@@ -224,6 +344,8 @@ Function un.Files
   Delete $INSTDIR\etc\zsk\bit.private
   Delete $INSTDIR\etc\zsk\bit.key
   RMDir $INSTDIR\bin
+  RMDir $INSTDIR\etc\ksk
+  RMDir $INSTDIR\etc\zsk
   RMDir $INSTDIR\etc
   Delete $INSTDIR\namecoin.ico
   Delete $INSTDIR\uninst.exe
@@ -243,6 +365,7 @@ Function KeyConfig
   Delete $PLUGINSDIR\keyconfig.ps1
   Delete $PLUGINSDIR\keyconfig.cmd
 FunctionEnd
+
 
 # SERVICE INSTALLATION/UNINSTALLATION
 ##############################################################################
