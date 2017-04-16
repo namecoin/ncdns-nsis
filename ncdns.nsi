@@ -253,6 +253,9 @@ Function NamecoinCoreConfig
 haveDataDir:
   CreateDirectory $NamecoinCoreDataDir
 
+  # Configure cookie directory.
+  CreateDirectory C:\ProgramData\NamecoinCookie
+
   # Now we need to make sure namecoin.conf exists and has 'server=1'.
   # We'll do this with a powershell script, much as we do for configuring Unbound.
 
