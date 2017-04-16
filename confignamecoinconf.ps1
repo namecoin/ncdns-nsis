@@ -13,6 +13,6 @@ if (!((get-content -path $config_file) -match "^\s*server\s*=\s*1" -and 1)) {
 }
 
 # Ensure file contains 'rpccookiefile'
-if (!((get-content -path $config_file) -match "^\s*rpccookiefile\s*=C:\ProgramData\NamecoinCookie\.cookie" -and 1)) {
+if (!((get-content -path $config_file) -match "^\s*rpccookiefile\s*=C:\\ProgramData\\NamecoinCookie\\\.cookie" -and 1)) {
   [IO.File]::AppendAllText($config_file, "`nrpccookiefile=C:\ProgramData\NamecoinCookie\.cookie`n")
 }
