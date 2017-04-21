@@ -26,8 +26,11 @@ SetCompressor /SOLID lzma
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
+!include "components-dialog.nsdinc"
+
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
+Page custom ComponentDialogCreate ComponentDialogLeave
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -71,20 +74,41 @@ VIAddVersionKey "LegalTrademarks" "ncdns, Namecoin"
 VIAddVersionKey "Comments" "ncdns Installer"
 
 
+# VARIABLES
+##############################################################################
+Var /GLOBAL Reinstalling
+Var /GLOBAL UnboundConfPath
+Var /GLOBAL UnboundFragmentLocation
+Var /GLOBAL DNSSECTriggerUninstallCommand
+Var /GLOBAL NamecoinCoreUninstallCommand
+Var /GLOBAL NamecoinCoreDataDir
+Var /GLOBAL SkipNamecoinCore
+Var /GLOBAL SkipDNSSECTrigger
+
+Var /GLOBAL NamecoinCoreDetected
+Var /GLOBAL DNSSECTriggerDetected
+
+
 # PRELAUNCH CHECKS
 ##############################################################################
 !Include WinVer.nsh
 
 Function .onInit
-  ${IfNot} ${AtLeastWinXP}
-    ## This is always firing. Why?
-    #MessageBox "MB_OK|MB_ICONSTOP" "ncdns requires Windows Vista or later."
-    #Abort
+  ${IfNot} ${AtLeastWinVista}
+    MessageBox "MB_OK|MB_ICONSTOP" "ncdns requires Windows Vista or later."
+    Abort
   ${EndIf}
 
   # Make sections mandatory.
   Call ConfigSections
 
+  # Detect already installed dependencies.
+  Call DetectVC8 # aborts on failure
+  Call DetectNamecoinCore
+  Call DetectDNSSECTrigger
+FunctionEnd
+
+Function DetectVC8
   # Check that MSVC8 runtime is installed for dnssec-keygen.
   FindFirst $0 $1 $WINDIR\WinSxS\x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.*
   StrCmp $1 "" notfound
@@ -98,31 +122,76 @@ notfound:
 
 found:
   FindClose $0
+FunctionEnd
 
-  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.4027_none_d08a21a2442db2dc
-  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.4053_none_d08d7da0442a985d
-  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.42_none_db5f52fb98cb24ad
-  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.4940_none_d08cc06a442b34fc
-  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.6195_none_d09154e044272b9a
-  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.6229_none_d089f796442de10e
-  #x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.0.50727.762_none_10b2f55f9bffb8f8
+Function DetectNamecoinCore
+  ClearErrors
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Namecoin Core (32-bit)" "UninstallString"
+  IfErrors 0 found
+  ClearErrors
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Namecoin Core (64-bit)" "UninstallString"
+  IfErrors 0 found
+  Goto absent
+found:
+  Push 1
+  Pop $NamecoinCoreDetected
+  Return
+absent:
+  Push 0
+  Pop $NamecoinCoreDetected
+FunctionEnd
+
+Function DetectDNSSECTrigger
+  ClearErrors
+  ReadRegDWORD $0 HKLM "System\CurrentControlSet\Services\DNSSECTrigger" "Type"
+  IfErrors absent 0
+  Push 1
+  Pop $DNSSECTriggerDetected
+  Return
+absent:
+  Push 0
+  Pop $DNSSECTriggerDetected
+FunctionEnd
+
+
+# COMPONENT SELECTION DIALOG HELPERS
+##############################################################################
+Function ComponentDialogCreate
+  Call fnc_components_dialog_Create
+
+  ${If} $NamecoinCoreDetected == 1
+    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was detected."
+    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Automatically configure Namecoin Core (recommended)"
+    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will configure Namecoin Core myself (manual configuration required)"
+  ${Else}
+    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was not detected."
+    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (recommended)"
+    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will provide my own Namecoin node (manual configuration required)"
+  ${EndIf}
+
+  ${If} $DNSSECTriggerDetected == 1
+    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_Status "An existing DNSSEC Trigger installation was detected."
+    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_Yes "Automatically configure DNSSEC Trigger (recommended)"
+    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_No "I will configure DNSSEC Trigger myself (manual configuration required)"
+  ${Else}
+    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_Status "An existing DNSSEC Trigger installation was not detected."
+    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_Yes "Install and configure DNSSEC Trigger (recommended)"
+    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_No "I will provide my own DNS resolver (manual configuration required)"
+  ${EndIf}
+
+  nsDialogs::Show
+FunctionEnd
+
+Function ComponentDialogLeave
+  ${NSD_GetState} $hCtl_components_dialog_NamecoinCore_No $SkipNamecoinCore
+  ${NSD_GetState} $hCtl_components_dialog_DNSSECTrigger_No $SkipDNSSECTrigger
 FunctionEnd
 
 
 # INSTALL SECTIONS
 ##############################################################################
-Var /GLOBAL Reinstalling
-Var /GLOBAL UnboundConfPath
-Var /GLOBAL UnboundFragmentLocation
-Var /GLOBAL DNSSECTriggerUninstallCommand
-Var /GLOBAL NamecoinCoreUninstallCommand
-Var /GLOBAL NamecoinCoreDataDir
-
 Section "ncdns" Sec_ncdns
-  #SectionIn RO
-
   SetOutPath $INSTDIR
-  InitPluginsDir
   Call ReinstallCheck
   Call Reg
   Call DNSSECTrigger
@@ -182,9 +251,13 @@ FunctionEnd
 ##############################################################################
 Function DNSSECTrigger
 !ifndef NO_DNSSEC_TRIGGER
-  ClearErrors
-  ReadRegDWORD $0 HKLM "System\CurrentControlSet\Services\DNSSECTrigger" "Type"
-  IfErrors 0 done
+  ${If} $DNSSECTriggerDetected == 1
+    # Already have DNSSEC Trigger
+    Return
+  ${EndIf}
+  ${If} $SkipDNSSECTrigger == ${BST_CHECKED}
+    Return
+  ${EndIf}
 
   # Install DNSSEC Trigger
   DetailPrint "Installing DNSSEC Trigger..."
@@ -192,9 +265,6 @@ Function DNSSECTrigger
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledDNSSECTrigger" 1
   ExecWait $TEMP\dnssec_trigger_setup.exe
   Delete /REBOOTOK $TEMP\dnssec_trigger_setup.exe
-
-  # Already have DNSSEC Trigger
-done:
 !endif
 FunctionEnd
 
@@ -234,6 +304,10 @@ FunctionEnd
 # NAMECOIN CORE CONFIG
 ##############################################################################
 Function NamecoinCoreConfig
+  ${If} $SkipNamecoinCore == 1
+    Return
+  ${EndIf}
+
   # We have to set 'server=1' in namecoin.conf. We can use cookies to get the
   # rest, so that's all we need.
   #
@@ -268,7 +342,6 @@ haveDataDir:
   nsExec::ExecToLog '$PLUGINSDIR\confignamecoinconf.cmd'
   Delete $PLUGINSDIR\confignamecoinconf.ps1
   Delete $PLUGINSDIR\confignamecoinconf.cmd
-
 FunctionEnd
 
 
@@ -276,12 +349,13 @@ FunctionEnd
 ##############################################################################
 Function NamecoinCore
 !ifndef NO_NAMECOIN_CORE
-  ClearErrors
-  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Namecoin Core (32-bit)" "UninstallString"
-  IfErrors 0 done
-  ClearErrors
-  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Namecoin Core (64-bit)" "UninstallString"
-  IfErrors 0 done
+  ${If} $NamecoinCoreDetected == 1
+    # Already have Namecoin Core
+    Return
+  ${EndIf}
+  ${If} $SkipNamecoinCore == ${BST_CHECKED}
+    Return
+  ${EndIf}
 
   # Install Namecoin Core
   DetailPrint "Installing Namecoin Core..."
@@ -293,9 +367,6 @@ Function NamecoinCore
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore" 1
   ExecWait $TEMP\namecoin-setup-unsigned.exe
   Delete /REBOOTOK $TEMP\namecoin-setup-unsigned.exe
-
-  # Already have Namecoin Core
-  done:
 !endif
 FunctionEnd
 
@@ -443,6 +514,10 @@ FunctionEnd
 # UNBOUND CONFIGURATION
 ##############################################################################
 Function UnboundConfig
+  ${If} $SkipDNSSECTrigger == 1
+    Return
+  ${EndIf}
+
   # Detect dnssec-trigger installation.
   ClearErrors
   ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\DnssecTrigger" "InstallLocation"
