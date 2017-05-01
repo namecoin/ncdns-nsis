@@ -603,13 +603,13 @@ FunctionEnd
 Function TrustConfig
   IfFileExists "$LOCALAPPDATA\Google\Chrome\User Data" found 0
   IfFileExists "$LOCALAPPDATA\Chromium\User Data" found 0
-  DetailPrint "*** Chrome/Chromium NOT detected, not configuring trust."
+  DetailPrint "*** Chromium/Chrome NOT detected, not configuring trust."
   Return
 
 found:
   MessageBox MB_ICONQUESTION|MB_YESNO "You currently have Chromium or Google Chrome installed.  ncdns can enable HTTPS for Namecoin websites in Chromium/Chrome.  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).  If you plan to access Namecoin-enabled websites on this computer from any web browser other than Chromium, Chrome, Firefox, or Tor Browser, you should not enable HTTPS for Namecoin websites in Chromium/Chrome.$\n$\nWould you like to enable HTTPS for Namecoin websites in Chromium/Chrome?" /SD IDNO IDYES chose_yes IDNO chose_no
 chose_no:
-  DetailPrint "*** Chrome/Chromium was detected, but user elected not to configure it."
+  DetailPrint "*** Chromium/Chrome was detected, but user elected not to configure it."
   Return
 
 found_again:
@@ -648,7 +648,7 @@ chose_yes:
   FileWrite $4 '$\r$\n$\r$\n## ++TRUST++$\r$\n## Added automatically by installer because truststore mode was enabled.$\r$\n[certstore]$\r$\ncryptoapi=true$\r$\n## ++/TRUST++$\r$\n$\r$\n'
   FileClose $4
 
-  DetailPrint "*** Chrome/Chromium WAS configured after user confirmation."
+  DetailPrint "*** Chromium/Chrome WAS configured after user confirmation."
 FunctionEnd
 
 Function un.TrustConfig

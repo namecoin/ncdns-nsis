@@ -14,4 +14,9 @@ Put the following files in `artifacts/`:
   - Optionally, add `ncdt.exe` and `ncdumpzone.exe` from ncdns.
   - `generate_nmc_cert.exe` and `q.exe` will also be copied if they are present.
 
+Build flags:
+
+  - `make NCDNS_64BIT=1` — make a 64-bit build.
+  - `make NCDNS_PRODVER=0.0.0.1` — set ncdns product version.
+
 Licenced under the MIT License.

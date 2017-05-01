@@ -10,7 +10,7 @@ Do not edit manually!
     <RadioButton Name="DNSSECTrigger_Yes" Location="12, 38" Size="408, 24" Text="DNSSEC_TRIGGER_YES" Checked="True" TabIndex="1" />
     <Label Name="DNSSECTrigger_Status" Location="12, 17" Size="408, 18" Text="DNSSEC_TRIGGER_STATUS" TabIndex="2" />
   </GroupBox>
-  <Label Name="IntroLabel" Location="16, -1" Size="422, 15" Text="ncdns for Windows requires a Namecoin node and DNSSEC Trigger to operate." TabIndex="1" />
+  <Label Name="IntroLabel" Location="16, -1" Size="422, 15" Text="ncdns for Windows requires a Namecoin node and DNSSEC Trigger (or another DNS resolver) to operate." TabIndex="1" />
   <GroupBox Name="NamecoinCore_Group" Location="12, 28" Size="426, 94" Text="Namecoin Node" TabIndex="2">
     <RadioButton Name="NamecoinCore_No" Location="12, 59" Size="408, 24" Text="NAMECOIN_CORE_NO" TabIndex="0" />
     <RadioButton Name="NamecoinCore_Yes" Location="12, 38" Size="408, 24" Text="NAMECOIN_CORE_YES" Checked="True" TabIndex="1" />

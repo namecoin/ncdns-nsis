@@ -48,7 +48,7 @@ Function fnc_components_dialog_Create
   Pop $hCtl_components_dialog_DNSSECTrigger_Status
   
   ; === IntroLabel (type: Label) ===
-  ${NSD_CreateLabel} 10.53u -0.62u 277.77u 9.23u "ncdns for Windows requires a Namecoin node and DNSSEC Trigger to operate."
+  ${NSD_CreateLabel} 10.53u -0.62u 277.77u 9.23u "ncdns for Windows requires a Namecoin node and DNSSEC Trigger (or another DNS resolver) to operate."
   Pop $hCtl_components_dialog_IntroLabel
   
   ; === NamecoinCore_Group (type: GroupBox) ===
