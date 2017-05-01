@@ -392,12 +392,16 @@ Function un.NamecoinCore
   Goto done
 
 found:
+  # Ask the user if they want to uninstall Namecoin Core
+  MessageBox MB_YESNO|MB_ICONQUESTION "When you installed ncdns for Windows, Namecoin Core was installed automatically as a necessary dependency of ncdns for Windows. Would you like to remove it? If you leave it in place, you will not be able to connect to .bit domains, but will still be able to use Namecoin Core as a Namecoin node and wallet.$\n$\nSelect Yes to remove Namecoin Core." IDYES 0 IDNO done
+
+  # Uninstall Namecoin Core.
   DetailPrint "Uninstalling Namecoin Core... $NamecoinCoreUninstallCommand"
   ExecWait $NamecoinCoreUninstallCommand
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore"
 
 done:
-  # Didn't install Namecoin Core.
+  # Didn't install/not uninstalling Namecoin Core.
 !endif
 FunctionEnd
 
