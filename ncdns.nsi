@@ -199,6 +199,7 @@ Section "ncdns" Sec_ncdns
   Call NamecoinCore
   Call Service
   Call Files
+  Call FilesSecurePre
   Call KeyConfig
   Call TrustConfig
   Call FilesSecure
@@ -428,9 +429,13 @@ Function Files
   File /nonfatal /oname=$INSTDIR\bin\q.exe artifacts\q.exe
 FunctionEnd
 
+Function FilesSecurePre
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+FunctionEnd
+
 Function FilesSecure
   # Ensure only ncdns service and administrators can read ncdns.conf.
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+  Call FilesSecurePre
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk" /reset'
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.private" /reset'
