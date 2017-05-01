@@ -10,9 +10,18 @@
     </style>
   </head>
   <body>
-    <p>This is the tutorial...</p>
-    <p><a href="#" id="confirm_link">Confirm</a></p>
-    <p><a href="#" id="reject_link">Reject</a></p>
+    <p>In order to configure secure access to .bit domains in Chromium/Chrome,
+    you must perform the following steps. You must perform these steps before
+    the installer will continue.</p>
+    <ol>
+      <li>In Chromium/Chrome, visit <code>chrome://net-internals#hsts</code></li>
+      <li>Under “Add domain”, enter the following: domain “bit”, STS unchecked,
+        PKP checked, fingerprint "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".</li>
+      <li>Click “Add”.</li>
+    </ol>
+
+    <p><a href="#" id="confirm_link">I confirm that I have performed these steps</a></p>
+    <p><a href="#" id="reject_link">I did not perform these steps; I do not want to configure Chromium/Chrome</a></p>
 
     <script type="application/javascript">
       var confirm_link = document.getElementById('confirm_link');
