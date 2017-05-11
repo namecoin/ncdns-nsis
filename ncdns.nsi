@@ -330,6 +330,7 @@ haveDataDir:
 
   # Configure cookie directory.
   CreateDirectory C:\ProgramData\NamecoinCookie
+  nsExec::ExecToLog 'icacls "C:\ProgramData\NamecoinCookie" /inheritance:r /T /grant "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" "Users:(OI)(CI)F"'
 
   # Now we need to make sure namecoin.conf exists and has 'server=1'.
   # We'll do this with a powershell script, much as we do for configuring Unbound.
