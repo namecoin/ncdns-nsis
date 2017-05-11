@@ -83,10 +83,10 @@ Var /GLOBAL DNSSECTriggerUninstallCommand
 Var /GLOBAL NamecoinCoreUninstallCommand
 Var /GLOBAL NamecoinCoreDataDir
 Var /GLOBAL SkipNamecoinCore
-Var /GLOBAL SkipDNSSECTrigger
+Var /GLOBAL SkipUnbound
 
 Var /GLOBAL NamecoinCoreDetected
-Var /GLOBAL DNSSECTriggerDetected
+Var /GLOBAL UnboundDetected
 
 
 # PRELAUNCH CHECKS
@@ -105,7 +105,7 @@ Function .onInit
   # Detect already installed dependencies.
   Call DetectVC8 # aborts on failure
   Call DetectNamecoinCore
-  Call DetectDNSSECTrigger
+  Call DetectUnbound
 FunctionEnd
 
 Function DetectVC8
@@ -141,16 +141,16 @@ absent:
   Pop $NamecoinCoreDetected
 FunctionEnd
 
-Function DetectDNSSECTrigger
+Function DetectUnbound
   ClearErrors
-  ReadRegDWORD $0 HKLM "System\CurrentControlSet\Services\DNSSECTrigger" "Type"
+  ReadRegDWORD $0 HKLM "System\CurrentControlSet\Services\unbound" "Type"
   IfErrors absent 0
   Push 1
-  Pop $DNSSECTriggerDetected
+  Pop $UnboundDetected
   Return
 absent:
   Push 0
-  Pop $DNSSECTriggerDetected
+  Pop $UnboundDetected
 FunctionEnd
 
 
@@ -169,14 +169,14 @@ Function ComponentDialogCreate
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will provide my own Namecoin node (manual configuration required)"
   ${EndIf}
 
-  ${If} $DNSSECTriggerDetected == 1
-    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_Status "An existing DNSSEC Trigger installation was detected."
-    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_Yes "Automatically configure DNSSEC Trigger (recommended)"
-    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_No "I will configure DNSSEC Trigger myself (manual configuration required)"
+  ${If} $UnboundDetected == 1
+    ${NSD_SetText} $hCtl_components_dialog_Unbound_Status "An existing Unbound installation was detected."
+    ${NSD_SetText} $hCtl_components_dialog_Unbound_Yes "Automatically configure Unbound (recommended)"
+    ${NSD_SetText} $hCtl_components_dialog_Unbound_No "I will configure Unbound myself (manual configuration required)"
   ${Else}
-    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_Status "An existing DNSSEC Trigger installation was not detected."
-    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_Yes "Install and configure DNSSEC Trigger (recommended)"
-    ${NSD_SetText} $hCtl_components_dialog_DNSSECTrigger_No "I will provide my own DNS resolver (manual configuration required)"
+    ${NSD_SetText} $hCtl_components_dialog_Unbound_Status "An existing Unbound installation was not detected."
+    ${NSD_SetText} $hCtl_components_dialog_Unbound_Yes "Install and configure Unbound/DNSSEC Trigger (recommended)"
+    ${NSD_SetText} $hCtl_components_dialog_Unbound_No "I will provide my own DNS resolver (manual configuration required)"
   ${EndIf}
 
   nsDialogs::Show
@@ -184,7 +184,7 @@ FunctionEnd
 
 Function ComponentDialogLeave
   ${NSD_GetState} $hCtl_components_dialog_NamecoinCore_No $SkipNamecoinCore
-  ${NSD_GetState} $hCtl_components_dialog_DNSSECTrigger_No $SkipDNSSECTrigger
+  ${NSD_GetState} $hCtl_components_dialog_Unbound_No $SkipUnbound
 FunctionEnd
 
 
@@ -252,11 +252,11 @@ FunctionEnd
 ##############################################################################
 Function DNSSECTrigger
 !ifndef NO_DNSSEC_TRIGGER
-  ${If} $DNSSECTriggerDetected == 1
+  ${If} $UnboundDetected == 1
     # Already have DNSSEC Trigger
     Return
   ${EndIf}
-  ${If} $SkipDNSSECTrigger == ${BST_CHECKED}
+  ${If} $SkipUnbound == ${BST_CHECKED}
     Return
   ${EndIf}
 
@@ -523,26 +523,33 @@ FunctionEnd
 # UNBOUND CONFIGURATION
 ##############################################################################
 Function UnboundConfig
-  ${If} $SkipDNSSECTrigger == 1
+  ${If} $SkipUnbound == 1
     Return
   ${EndIf}
 
-  # Detect dnssec-trigger installation.
+  # Detect dnssec-trigger/Unbound installation.
   ClearErrors
   ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\DnssecTrigger" "InstallLocation"
   IfErrors 0 found
   ReadRegStr $UnboundConfPath HKLM "Software\DnssecTrigger" "InstallLocation"
+  IfErrors 0 found
+  ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\Unbound" "InstallLocation"
+  IfErrors 0 found
+  ReadRegStr $UnboundConfPath HKLM "Software\Unbound" "InstallLocation"
   IfErrors 0 found
 not_found:
   DetailPrint "*** dnssec-trigger installation was NOT found, not configuring Unbound."
   StrCpy $UnboundConfPath ""
   Return
 
-  # dnssec-trigger is installed. Adapt the Unbound config to include from a
+  # dnssec-trigger/Unbound is installed. Adapt the Unbound config to include from a
   # directory.
 found:
   DetailPrint "*** dnssec-trigger installation WAS found, configuring Unbound."
-  IfFileExists "$UnboundConfPath\unbound.conf" 0 not_found
+  IfFileExists "$UnboundConfPath\unbound.conf" found2
+  IfFileExists "$UnboundConfPath\service.conf" found2
+  Goto not_found
+found2:
   CreateDirectory "$UnboundConfPath\unbound.conf.d"
 
   # Unbound on Windows doesn't appear to support globbing include directives,

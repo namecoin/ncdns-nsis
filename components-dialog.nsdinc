@@ -7,10 +7,10 @@
 
 ; handle variables
 Var hCtl_components_dialog
-Var hCtl_components_dialog_DNSSECTrigger_Group
-Var hCtl_components_dialog_DNSSECTrigger_No
-Var hCtl_components_dialog_DNSSECTrigger_Yes
-Var hCtl_components_dialog_DNSSECTrigger_Status
+Var hCtl_components_dialog_Unbound_Group
+Var hCtl_components_dialog_Unbound_No
+Var hCtl_components_dialog_Unbound_Yes
+Var hCtl_components_dialog_Unbound_Status
 Var hCtl_components_dialog_IntroLabel
 Var hCtl_components_dialog_NamecoinCore_Group
 Var hCtl_components_dialog_NamecoinCore_No
@@ -29,26 +29,26 @@ Function fnc_components_dialog_Create
   ${EndIf}
   !insertmacro MUI_HEADER_TEXT "ncdns for Windows" "Select components"
   
-  ; === DNSSECTrigger_Group (type: GroupBox) ===
-  ${NSD_CreateGroupBox} 7.9u 78.77u 280.41u 57.85u "DNSSEC Trigger"
-  Pop $hCtl_components_dialog_DNSSECTrigger_Group
+  ; === Unbound_Group (type: GroupBox) ===
+  ${NSD_CreateGroupBox} 7.9u 78.77u 280.41u 57.85u "Unbound"
+  Pop $hCtl_components_dialog_Unbound_Group
   
-  ; === DNSSECTrigger_No (type: RadioButton) ===
-  ${NSD_CreateRadioButton} 15.8u 115.08u 268.56u 14.77u "DNSSEC_TRIGGER_NO"
-  Pop $hCtl_components_dialog_DNSSECTrigger_No
-  ${NSD_AddStyle} $hCtl_components_dialog_DNSSECTrigger_No ${WS_GROUP}
+  ; === Unbound_No (type: RadioButton) ===
+  ${NSD_CreateRadioButton} 15.8u 115.08u 268.56u 14.77u "UNBOUND_NO"
+  Pop $hCtl_components_dialog_Unbound_No
+  ${NSD_AddStyle} $hCtl_components_dialog_Unbound_No ${WS_GROUP}
   
-  ; === DNSSECTrigger_Yes (type: RadioButton) ===
-  ${NSD_CreateRadioButton} 15.8u 102.15u 268.56u 14.77u "DNSSEC_TRIGGER_YES"
-  Pop $hCtl_components_dialog_DNSSECTrigger_Yes
-  ${NSD_Check} $hCtl_components_dialog_DNSSECTrigger_Yes
+  ; === Unbound_Yes (type: RadioButton) ===
+  ${NSD_CreateRadioButton} 15.8u 102.15u 268.56u 14.77u "UNBOUND_YES"
+  Pop $hCtl_components_dialog_Unbound_Yes
+  ${NSD_Check} $hCtl_components_dialog_Unbound_Yes
   
-  ; === DNSSECTrigger_Status (type: Label) ===
-  ${NSD_CreateLabel} 15.8u 89.23u 268.56u 11.08u "DNSSEC_TRIGGER_STATUS"
-  Pop $hCtl_components_dialog_DNSSECTrigger_Status
+  ; === Unbound_Status (type: Label) ===
+  ${NSD_CreateLabel} 15.8u 89.23u 268.56u 11.08u "UNBOUND_STATUS"
+  Pop $hCtl_components_dialog_Unbound_Status
   
   ; === IntroLabel (type: Label) ===
-  ${NSD_CreateLabel} 10.53u -0.62u 277.77u 9.23u "ncdns for Windows requires a Namecoin node and DNSSEC Trigger (or another DNS resolver) to operate."
+  ${NSD_CreateLabel} 10.53u -0.62u 277.77u 9.23u "ncdns for Windows requires a Namecoin node and Unbound (or another DNS resolver) to operate."
   Pop $hCtl_components_dialog_IntroLabel
   
   ; === NamecoinCore_Group (type: GroupBox) ===

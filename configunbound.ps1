@@ -1,6 +1,13 @@
 # Usage: Synopsis: configunbound.ps1 "C:\...\Unbound\" "C:\Program Files (x86)\ncdns\"
 $unbound_path = $args[0]
-$config_file = "$unbound_path\unbound.conf"
+$config_file = ""
+if (Test-Path "$unbound_path\unbound.conf") {
+  $config_file = "$unbound_path\unbound.conf"
+} elseif (Test-Path "$unbound_path\service.conf") {
+  $config_file = "$unbound_path\service.conf"
+} else {
+  throw "Cannot find Unbound configuration file in Unbound directory";
+}
 $include_file = "$unbound_path\confd-list.conf"
 $ncdns_path = $args[1]
 $einclude_file = [Regex]::Escape($include_file)
