@@ -1,11 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 # Calculates floor(2**256/pi), and encodes the result as base64.
 # Intended to be used as a SHA256 hash where I don't have a preimage up my sleeve.
 # Originally by Ryan Castellucci.  Python3 port, pi sourcing, and base64 output added by Jeremy Rand.
 
-import codecs
-import gmpy2
+import codecs, gmpy2
 
 # precision in bits
 gmpy2.get_context().precision=1024

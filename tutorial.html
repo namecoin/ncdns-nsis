@@ -7,6 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <style type="text/css">
       body { background-color: pink; }
+      .note { font-size: small; padding-top: 2em; }
     </style>
   </head>
   <body>
@@ -30,7 +31,7 @@
     <p><a href="#" id="confirm_link">I confirm that I have performed these steps</a></p>
     <p><a href="#" id="reject_link">I did not perform these steps; I do not want to configure Chromium/Chrome</a></p>
 
-    <p>If you're curious, the above fingerprint is floor(2**256/pi), encoded as base64.  This is an example of a "nothing up my sleeve" value.  Python code for generating this fingerprint is included in this installer's source code, in the <code>sleeve256</code> folder.</p>
+    <p class="note">(Note: The above fingerprint is floor(2<sup>256</sup>/π), base64 encoded.  This is an example of a “nothing up my sleeve” value. Python code for generating this fingerprint is included in this installer's source code, in the <code>sleeve256</code> directory. The fingerprint is a random value satisfied by no known certificate, and ensures that conventional certification authorities cannot issue certificates for .bit websites. Failure to configure this pin creates a corresponding vulnerability.)</p>
 
     <script type="application/javascript">
       var confirm_link = document.getElementById('confirm_link');
