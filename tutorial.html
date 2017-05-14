@@ -15,13 +15,22 @@
     the installer will continue.</p>
     <ol>
       <li>In Chromium/Chrome, visit <code>chrome://net-internals#hsts</code></li>
-      <li>Under “Add domain”, enter the following: domain “bit”, STS unchecked,
-        PKP checked, fingerprint "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".</li>
+      <li>
+        Under “Add domain”, enter the following:
+        <ul>
+          <li>Domain: <code>bit</code></li>
+          <li>STS: No</li>
+          <li>PKP: Yes</li>
+          <li>Fingerprint: <code>sha256/UXzBtyciCpT+E6vo+ppu4G2xSsyeIcgg/yix1e9d4rA=</code></li>
+        </ul>
+      </li>
       <li>Click “Add”.</li>
     </ol>
 
     <p><a href="#" id="confirm_link">I confirm that I have performed these steps</a></p>
     <p><a href="#" id="reject_link">I did not perform these steps; I do not want to configure Chromium/Chrome</a></p>
+
+    <p>If you're curious, the above fingerprint is floor(2**256/pi), encoded as base64.  This is an example of a "nothing up my sleeve" value.  Python code for generating this fingerprint is included in this installer's source code, in the <code>sleeve256</code> folder.</p>
 
     <script type="application/javascript">
       var confirm_link = document.getElementById('confirm_link');
