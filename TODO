@@ -1,12 +1,1 @@
-
-- Allow user to opt out of installation of Namecoin Core and DNSSEC Trigger
-
-- Maybe mention the licence somewhere in the GUI
-
-
-
-
-
-- Figure out why OS version check doesn't work properly
-
-- Confirm reproducbility of build process
+- Confirm reproducbility of build process?
