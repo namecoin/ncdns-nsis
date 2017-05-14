@@ -25,6 +25,7 @@ SetCompressor /SOLID lzma
 !define MUI_ICON "media\namecoin.ico"
 !define MUI_FINISHPAGE_NOAUTOCLOSE
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW ShowCallback
 
 !include "components-dialog.nsdinc"
 
@@ -154,8 +155,13 @@ absent:
 FunctionEnd
 
 
-# COMPONENT SELECTION DIALOG HELPERS
+# DIALOG HELPERS
 ##############################################################################
+Function ShowCallback
+  SendMessage $mui.WelcomePage.Text ${WM_SETTEXT} 0 "STR:$(MUI_TEXT_WELCOME_INFO_TEXT)$\n$\nThis software is open source and licenced under the MIT License. It is distributed WITHOUT ANY WARRANTY."
+FunctionEnd
+
+
 Function ComponentDialogCreate
   Call fnc_components_dialog_Create
 
