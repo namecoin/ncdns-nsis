@@ -158,7 +158,7 @@ FunctionEnd
 # DIALOG HELPERS
 ##############################################################################
 Function ShowCallback
-  SendMessage $mui.WelcomePage.Text ${WM_SETTEXT} 0 "STR:$(MUI_TEXT_WELCOME_INFO_TEXT)$\n$\nThis software is open source and licenced under the MIT License. It is distributed WITHOUT ANY WARRANTY."
+  SendMessage $mui.WelcomePage.Text ${WM_SETTEXT} 0 "STR:$(MUI_TEXT_WELCOME_INFO_TEXT)$\n$\nThis software is open source and licenced under the GPLv3 License. It is distributed WITHOUT ANY WARRANTY."
 FunctionEnd
 
 
