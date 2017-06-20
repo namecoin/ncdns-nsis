@@ -3,7 +3,7 @@ all: build/ncdns-install.exe
 MAKENSIS ?= makensis
 NSISFLAGS ?= -V2
 
-NCDNS_REPO ?= github.com/hlandau/ncdns
+NCDNS_REPO ?= github.com/namecoin/ncdns
 NCDNS_PRODVER ?= 
 ifeq ($(NCDNS_PRODVER),)
 	ifneq ($(GOPATH),)
