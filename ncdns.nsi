@@ -209,9 +209,9 @@ Section "ncdns" Sec_ncdns
   Call NamecoinCore
   Call Service
   Call Files
+  Call TrustConfig
   Call FilesSecurePre
   Call KeyConfig
-  Call TrustConfig
   Call FilesSecure
   Call ServiceStart
   Call UnboundConfig
