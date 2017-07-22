@@ -664,22 +664,26 @@ Function ChromiumConfigAtLoc
   ${EndIf}
 
   # Prompt user.
+reprompt:
   MessageBox MB_ICONQUESTION|MB_YESNO "You currently have Chromium or Google Chrome installed.  ncdns can enable HTTPS for Namecoin websites in Chromium/Chrome.  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).  If you plan to access Namecoin-enabled websites on this computer from any web browser other than Chromium, Chrome, Firefox, or Tor Browser, you should not enable HTTPS for Namecoin websites in Chromium/Chrome.$\n$\nWould you like to enable HTTPS for Namecoin websites in Chromium/Chrome?" /SD IDNO IDYES chose_yes IDNO chose_no
 
 chose_no:
+  DetailPrint "*** Skipping profile because user elected not to configure Chromium/Chrome: $CurChromium_TransportSecurity"
+  StrCpy $ChromiumFound 0
   StrCpy $ChromiumRejected 1
   Return
 
 chose_yes:
-  DetailPrint "*** Configuring Chromium/Chrome profile: $CurChromium_TransportSecurity"
   StrCpy $ChromiumFound 1
+  StrCpy $ChromiumRejected 0
 
 check_again:
   IfFileExists "$CurChromium_lockfile" 0 not_locked
-  MessageBox MB_OK "One or more copies of Google Chrome or Chromium or a Chromium-based web browser appear to be open. Please close them before proceeding, then press OK."
-  Goto check_again
+  MessageBox MB_OKCANCEL "One or more copies of Google Chrome or Chromium or a Chromium-based web browser appear to be open. Please close them before proceeding, then press OK." IDOK check_again IDCANCEL 0
+  Goto reprompt
 
 not_locked:
+  DetailPrint "*** Configuring Chromium/Chrome profile: $CurChromium_TransportSecurity"
   FileOpen $4 "$PLUGINSDIR\tlsrestrict_chromium.cmd" w
   FileWrite $4 '"$PLUGINSDIR\tlsrestrict_chromium_tool.exe" -tlsrestrict.chromium-ts-path="$CurChromium_TransportSecurity"'
   FileClose $4
