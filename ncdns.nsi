@@ -639,6 +639,7 @@ Function TrustConfig
   Delete $PLUGINSDIR\tlsrestrict_chromium_tool.exe
 
   ${If} $ChromiumFound = 0
+    DetailPrint "*** Chromium support was not configured."
     Return
   ${EndIf}
 
