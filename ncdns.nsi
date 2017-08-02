@@ -89,6 +89,10 @@ Var /GLOBAL SkipUnbound
 Var /GLOBAL NamecoinCoreDetected
 Var /GLOBAL UnboundDetected
 
+Var /GLOBAL CurChromium_TransportSecurity
+Var /GLOBAL CurChromium_lockfile
+Var /GLOBAL ChromiumFound
+Var /GLOBAL ChromiumRejected
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -205,9 +209,9 @@ Section "ncdns" Sec_ncdns
   Call NamecoinCore
   Call Service
   Call Files
+  Call TrustConfig
   Call FilesSecurePre
   Call KeyConfig
-  Call TrustConfig
   Call FilesSecure
   Call ServiceStart
   Call UnboundConfig
@@ -337,6 +341,7 @@ haveDataDir:
   # Configure cookie directory.
   CreateDirectory C:\ProgramData\NamecoinCookie
   nsExec::ExecToLog 'icacls "C:\ProgramData\NamecoinCookie" /inheritance:r /T /grant "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" "Users:(OI)(CI)F"'
+  nsExec::ExecToLog 'icacls "C:\ProgramData\NamecoinCookie\.cookie" /reset'
 
   # Now we need to make sure namecoin.conf exists and has 'server=1'.
   # We'll do this with a powershell script, much as we do for configuring Unbound.
@@ -615,37 +620,82 @@ FunctionEnd
 # REGISTRY PERMISSION CONFIGURATION FOR NCDNS TRUST INJECTION
 ##############################################################################
 Function TrustConfig
-  IfFileExists "$LOCALAPPDATA\Google\Chrome\User Data" found 0
-  IfFileExists "$LOCALAPPDATA\Chromium\User Data" found 0
-  DetailPrint "*** Chromium/Chrome NOT detected, not configuring trust."
-  Return
+  StrCpy $ChromiumFound 0
+  StrCpy $ChromiumRejected 0
 
-found:
+  File /oname=$PLUGINSDIR\tlsrestrict_chromium_tool.exe artifacts\tlsrestrict_chromium_tool.exe
+
+  # Configure Chromium installations.
+  StrCpy $CurChromium_TransportSecurity "$LOCALAPPDATA\Google\Chrome\User Data\Default\TransportSecurity"
+  StrCpy $CurChromium_lockfile "$LOCALAPPDATA\Google\Chrome\User Data\lockfile"
+  Call ChromiumConfigAtLoc
+  StrCpy $CurChromium_TransportSecurity "$LOCALAPPDATA\Chromium\User Data\Default\TransportSecurity"
+  StrCpy $CurChromium_lockfile "$LOCALAPPDATA\Chromium\User Data\lockfile"
+  Call ChromiumConfigAtLoc
+  StrCpy $CurChromium_TransportSecurity "$APPDATA\Opera Software\Opera Stable\TransportSecurity"
+  StrCpy $CurChromium_lockfile "$APPDATA\Opera Software\Opera Stable\lockfile"
+  Call ChromiumConfigAtLoc
+
+  Delete $PLUGINSDIR\tlsrestrict_chromium_tool.exe
+
+  ${If} $ChromiumFound = 0
+    DetailPrint "*** Chromium support was not configured."
+    Return
+  ${EndIf}
+
+  Call TrustInjectionConfig
+
+  DetailPrint "*** Chromium support was configured."
+FunctionEnd
+
+Function un.TrustConfig
+  Call un.TrustInjectionConfig
+FunctionEnd
+
+Function ChromiumConfigAtLoc
+  # No-op if profile doesn't exist.
+  IfFileExists "$CurChromium_TransportSecurity" 0 not_found
+
+  # Don't re-prompt the user if they've already assented/declined once.
+  ${If} $ChromiumFound = 1
+    Goto chose_yes
+  ${EndIf}
+  ${If} $ChromiumRejected = 1
+    Goto chose_no
+  ${EndIf}
+
+  # Prompt user.
+reprompt:
   MessageBox MB_ICONQUESTION|MB_YESNO "You currently have Chromium or Google Chrome installed.  ncdns can enable HTTPS for Namecoin websites in Chromium/Chrome.  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).  If you plan to access Namecoin-enabled websites on this computer from any web browser other than Chromium, Chrome, Firefox, or Tor Browser, you should not enable HTTPS for Namecoin websites in Chromium/Chrome.$\n$\nWould you like to enable HTTPS for Namecoin websites in Chromium/Chrome?" /SD IDNO IDYES chose_yes IDNO chose_no
-chose_no:
-  DetailPrint "*** Chromium/Chrome was detected, but user elected not to configure it."
-  Return
 
-found_again:
-  Delete "$PLUGINSDIR\tutorial-confirm"
-  Goto found
+chose_no:
+  DetailPrint "*** Skipping profile because user elected not to configure Chromium/Chrome: $CurChromium_TransportSecurity"
+  StrCpy $ChromiumFound 0
+  StrCpy $ChromiumRejected 1
+  Return
 
 chose_yes:
-  Delete $PLUGINSDIR\tutorial-confirm
-  IfFileExists $PLUGINSDIR\tutorial-confirm found 0
-  File /oname=$PLUGINSDIR\tutorial.ps1 tutorial.ps1
-  File /oname=$PLUGINSDIR\tutorial.html tutorial.html
-  FileOpen $4 "$PLUGINSDIR\tutorial.cmd" w
-  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -sta -file "$PLUGINSDIR\tutorial.ps1" "$PLUGINSDIR\tutorial.html" "$PLUGINSDIR\tutorial-confirm" < nul'
+  StrCpy $ChromiumFound 1
+  StrCpy $ChromiumRejected 0
+
+check_again:
+  IfFileExists "$CurChromium_lockfile" 0 not_locked
+  MessageBox MB_OKCANCEL "One or more copies of Google Chrome or Chromium or a Chromium-based web browser appear to be open. Please close them before proceeding, then press OK." IDOK check_again IDCANCEL 0
+  Goto reprompt
+
+not_locked:
+  DetailPrint "*** Configuring Chromium/Chrome profile: $CurChromium_TransportSecurity"
+  FileOpen $4 "$PLUGINSDIR\tlsrestrict_chromium.cmd" w
+  FileWrite $4 '"$PLUGINSDIR\tlsrestrict_chromium_tool.exe" -tlsrestrict.chromium-ts-path="$CurChromium_TransportSecurity"'
   FileClose $4
-  nsExec::ExecToLog '"$PLUGINSDIR\tutorial.cmd"'
+  nsExec::ExecToLog '"$PLUGINSDIR\tlsrestrict_chromium.cmd"'
+  Delete $PLUGINSDIR\tlsrestrict_chromium.cmd
 
-  Delete $PLUGINSDIR\tutorial.cmd
-  Delete $PLUGINSDIR\tutorial.ps1
-  Delete $PLUGINSDIR\tutorial.html
-  IfFileExists "$PLUGINSDIR\tutorial-confirm" 0 found_again
-  Delete $PLUGINSDIR\tutorial-confirm
+not_found:
+  Return
+FunctionEnd
 
+Function TrustInjectionConfig
   # Configure permissions
   File /oname=$PLUGINSDIR\regpermrun.ps1 regpermrun.ps1
   File /oname=$PLUGINSDIR\regperm.ps1 regperm.ps1
@@ -661,11 +711,9 @@ chose_yes:
   FileSeek $4 0 END
   FileWrite $4 '$\r$\n$\r$\n## ++TRUST++$\r$\n## Added automatically by installer because truststore mode was enabled.$\r$\n[certstore]$\r$\ncryptoapi=true$\r$\n## ++/TRUST++$\r$\n$\r$\n'
   FileClose $4
-
-  DetailPrint "*** Chromium/Chrome WAS configured after user confirmation."
 FunctionEnd
 
-Function un.TrustConfig
+Function un.TrustInjectionConfig
   # Keep this the same as the above (NSIS forces function duplication for the uninstaller, alas.)
   File /oname=$PLUGINSDIR\regpermrun.ps1 regpermrun.ps1
   File /oname=$PLUGINSDIR\regperm.ps1 regperm.ps1
