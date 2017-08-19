@@ -86,6 +86,7 @@ Var /GLOBAL NamecoinCoreUninstallCommand
 Var /GLOBAL NamecoinCoreDataDir
 Var /GLOBAL SkipNamecoinCore
 Var /GLOBAL SkipUnbound
+Var /GLOBAL UseSPV
 
 Var /GLOBAL NamecoinCoreDetected
 Var /GLOBAL UnboundDetected
@@ -94,6 +95,8 @@ Var /GLOBAL CurChromium_TransportSecurity
 Var /GLOBAL CurChromium_lockfile
 Var /GLOBAL ChromiumFound
 Var /GLOBAL ChromiumRejected
+Var /GLOBAL JREPath
+Var /GLOBAL JREDetected
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -105,6 +108,8 @@ Function .onInit
     Abort
   ${EndIf}
 
+  SetShellVarContext all
+
   # Make sections mandatory.
   Call ConfigSections
 
@@ -112,6 +117,11 @@ Function .onInit
   Call DetectVC8 # aborts on failure
   Call DetectNamecoinCore
   Call DetectUnbound
+  Call DetectJRE
+FunctionEnd
+
+Function un.onInit
+  SetShellVarContext all
 FunctionEnd
 
 Function DetectVC8
@@ -159,6 +169,37 @@ absent:
   Pop $UnboundDetected
 FunctionEnd
 
+Var /GLOBAL DetectJRE_W
+Function DetectJRE
+  StrCpy $JREDetected 0
+
+  StrCpy $DetectJRE_W "SOFTWARE\JavaSoft\Java Runtime Environment"
+  Call DetectJREUnder
+
+  ${If} $JREDetected == 1
+    Return
+  ${EndIf}
+
+  StrCpy $DetectJRE_W "SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment"
+  Call DetectJREUnder
+FunctionEnd
+
+Function DetectJREUnder
+  ClearErrors
+  ReadRegStr $0 HKLM "$DetectJRE_W" "CurrentVersion"
+  IfErrors not_found
+  StrCmp $0 "" not_found
+
+  ClearErrors
+  ReadRegStr $JREPath HKLM "$DetectJRE_W\$0" "JavaHome"
+  IfErrors not_found
+  StrCmp $JREPath "" not_found
+  StrCpy $JREDetected 1
+
+not_found:
+  Return
+FunctionEnd
+
 
 # DIALOG HELPERS
 ##############################################################################
@@ -173,10 +214,27 @@ Function ComponentDialogCreate
   ${If} $NamecoinCoreDetected == 1
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was detected."
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Automatically configure Namecoin Core (recommended)"
+    ${If} $JREDetected == 1
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client instead"
+    ${Else}
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client (Java must be installed)"
+      EnableWindow $hCtl_components_dialog_NamecoinCore_SPV 0
+    ${EndIf}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will configure Namecoin Core myself (manual configuration required)"
+
+    # Use Namecoin Core by default if it's already installed.
+    ${NSD_SetState} $hCtl_components_dialog_NamecoinCore_Yes ${BST_CHECKED}
   ${Else}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was not detected."
-    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (recommended)"
+    ${If} $JREDetected == 1
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core"
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client (recommended)"
+    ${Else}
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (recommended)"
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client (Java must be installed)"
+      EnableWindow $hCtl_components_dialog_NamecoinCore_SPV 0
+      ${NSD_SetState} $hCtl_components_dialog_NamecoinCore_Yes ${BST_CHECKED}
+    ${EndIf}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will provide my own Namecoin node (manual configuration required)"
   ${EndIf}
 
@@ -195,7 +253,12 @@ FunctionEnd
 
 Function ComponentDialogLeave
   ${NSD_GetState} $hCtl_components_dialog_NamecoinCore_No $SkipNamecoinCore
+  ${NSD_GetState} $hCtl_components_dialog_NamecoinCore_SPV $UseSPV
   ${NSD_GetState} $hCtl_components_dialog_Unbound_No $SkipUnbound
+
+  ${If} $UseSPV == ${BST_CHECKED}
+    StrCpy $SkipNamecoinCore 1
+  ${EndIf}
 FunctionEnd
 
 
@@ -210,6 +273,7 @@ Section "ncdns" Sec_ncdns
   Call NamecoinCore
   Call Service
   Call Files
+  Call BitcoinJ
   Call TrustConfig
   Call FilesSecurePre
   Call KeyConfig
@@ -229,6 +293,7 @@ Section "Uninstall"
   Call un.Service
   Call un.Files
   Call un.NamecoinCore
+  Call un.BitcoinJ
   Call un.DNSSECTrigger
   Call un.Reg
   RMDir "$INSTDIR"
@@ -411,6 +476,64 @@ found:
 
 done:
   # Didn't install/not uninstalling Namecoin Core.
+!endif
+FunctionEnd
+
+
+# BITCOINJ INSTALLATION
+##############################################################################
+Function BitcoinJ
+!ifndef NO_BITCOINJ
+  ${If} $UseSPV == ${BST_UNCHECKED}
+    # User did not elect to use SPV.
+    Return
+  ${EndIf}
+
+  # Install BitcoinJ
+  DetailPrint "Installing BitcoinJ..."
+  CreateDirectory $INSTDIR\BitcoinJ
+  File /oname=$INSTDIR\BitcoinJ\bitcoinj-daemon.jar ${ARTIFACTS}\bitcoinj-daemon.jar
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledBitcoinJ" 1
+
+  # Create data directory.
+  CreateDirectory C:\ProgramData\NamecoinBitcoinJ
+
+  # Configure ncdns to use BitcoinJ port.
+  FileOpen $4 "$INSTDIR\etc\ncdns.conf" a
+  FileSeek $4 0 END
+  FileWrite $4 '$\r$\n$\r$\n## ++SPV++$\r$\n## Added automatically by installer to point ncdns to SPV client.$\r$\nnamecoinrpcaddress="127.0.0.1:6563"$\r$\n## ++/SPV++$\r$\n$\r$\n'
+  FileClose $4
+
+  # Write a batch script to enable BitcoinJ to be easily launched.
+  FileOpen $4 "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd" w
+  FileWrite $4 'C:$\r$\ncd "C:\ProgramData\NamecoinBitcoinJ"$\r$\njava -jar "$INSTDIR\BitcoinJ\bitcoinj-daemon.jar" --connection.proxyenabled=false --connection.streamisolation=false --server.port=6563$\r$\n'
+  FileClose $4
+
+  # Create shortcuts to the batch script.
+  CreateShortcut "$SMPROGRAMS\BitcoinJ.lnk" "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd"
+  CreateShortcut "$DESKTOP\BitcoinJ.lnk" "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd"
+!endif
+FunctionEnd
+
+Function un.BitcoinJ
+!ifndef NO_BITCOINJ
+  # Determine if we installed BitcoinJ.
+  ClearErrors
+  ReadRegDWORD $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledBitcoinJ"
+  IfErrors done
+  IntCmp $0 0 done
+
+  # Remove BitcoinJ.
+  DetailPrint "Removing BitcoinJ..."
+  Delete "$SMPROGRAMS\BitcoinJ.lnk"
+  Delete "$DESKTOP\BitcoinJ.lnk"
+  Delete "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd"
+  Delete /REBOOTOK $INSTDIR\BitcoinJ\bitcoinj-daemon.jar
+  RMDir $INSTDIR\BitcoinJ
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledBitcoinJ"
+
+done:
+  # Didn't install BitcoinJ, so not uninstalling it.
 !endif
 FunctionEnd
 

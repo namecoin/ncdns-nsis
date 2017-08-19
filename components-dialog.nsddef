@@ -5,15 +5,16 @@ http://coolsoft.altervista.org/nsisdialogdesigner
 Do not edit manually!
 -->
 <Dialog Name="components_dialog" Title="ncdns for Windows" Subtitle="Select components">
-  <GroupBox Name="Unbound_Group" Location="12, 128" Size="426, 94" Text="Unbound" TabIndex="0">
-    <RadioButton Name="Unbound_No" Location="12, 59" Size="408, 24" Text="UNBOUND_NO" TabIndex="0" />
-    <RadioButton Name="Unbound_Yes" Location="12, 38" Size="408, 24" Text="UNBOUND_YES" Checked="True" TabIndex="1" />
-    <Label Name="Unbound_Status" Location="12, 17" Size="408, 18" Text="UNBOUND_STATUS" TabIndex="2" />
+  <GroupBox Name="Unbound_Group" Location="12, 145" Size="426, 80" Text="Unbound" TabIndex="0">
+    <Label Name="Unbound_Status" Location="12, 17" Size="408, 18" Text="UNBOUND_STATUS" TabIndex="0" />
+    <RadioButton Name="Unbound_Yes" Location="12, 30" Size="408, 24" Text="UNBOUND_YES" Checked="True" TabIndex="1" />
+    <RadioButton Name="Unbound_No" Location="12, 54" Size="408, 24" Text="UNBOUND_NO" TabIndex="2" />
   </GroupBox>
-  <Label Name="IntroLabel" Location="16, -1" Size="422, 15" Text="ncdns for Windows requires a Namecoin node and Unbound (or another DNS resolver) to operate." TabIndex="1" />
-  <GroupBox Name="NamecoinCore_Group" Location="12, 28" Size="426, 94" Text="Namecoin Node" TabIndex="2">
-    <RadioButton Name="NamecoinCore_No" Location="12, 59" Size="408, 24" Text="NAMECOIN_CORE_NO" TabIndex="0" />
-    <RadioButton Name="NamecoinCore_Yes" Location="12, 38" Size="408, 24" Text="NAMECOIN_CORE_YES" Checked="True" TabIndex="1" />
-    <Label Name="NamecoinCore_Status" Location="12, 17" Size="408, 18" Text="NAMECOIN_CORE_STATUS" TabIndex="2" />
+  <GroupBox Name="NamecoinCore_Group" Location="12, 28" Size="426, 111" Text="Namecoin Node" TabIndex="1">
+    <Label Name="NamecoinCore_Status" Location="12, 17" Size="408, 18" Text="NAMECOIN_NODE_STATUS" TabIndex="0" />
+    <RadioButton Name="NamecoinCore_Yes" Location="12, 30" Size="408, 24" Text="NAMECOIN_NODE_YES" TabIndex="1" />
+    <RadioButton Name="NamecoinCore_SPV" Location="12, 54" Size="408, 24" Text="NAMECOIN_NODE_SPV" Checked="True" TabIndex="2" />
+    <RadioButton Name="NamecoinCore_No" Location="12, 78" Size="408, 24" Text="NAMECOIN_NODE_NO" TabIndex="3" />
   </GroupBox>
+  <Label Name="IntroLabel" Location="16, -1" Size="422, 26" Text="ncdns for Windows requires a Namecoin node and Unbound (or another DNS resolver) to operate." TabIndex="2" />
 </Dialog>
