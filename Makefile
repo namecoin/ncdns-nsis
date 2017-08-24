@@ -59,7 +59,7 @@ $(ARTIFACTS)/$(NCDNS_ARCFN):
 EXES=ncdns ncdumpzone generate_nmc_cert ncdt tlsrestrict_chromium_tool
 EXES_A=$(foreach k,$(EXES),$(ARTIFACTS)/$(k).exe)
 
-$(EXES_A): | $(ARTIFACTS)/$(NCDNS_ARCFN)
+$(ARTIFACTS)/ncdns.exe: $(ARTIFACTS)/$(NCDNS_ARCFN)
 	(cd "$(ARTIFACTS)"; tar zxvf "$(NCDNS_ARCFN)"; mv ncdns-$(NCDNS_PRODVER)-windows_$(GOARCH)/bin/* ./; rm -rf ncdns-$(NCDNS_PRODVER)-windows_$(GOARCH);)
 
 
@@ -73,7 +73,7 @@ KGFILES=dnssec-keygen.exe libisc.dll libdns.dll libeay32.dll libxml2.dll
 KGFILES_T=$(foreach k,$(KGFILES),tmp/$(k))
 KGFILES_A=$(foreach k,$(KGFILES),$(ARTIFACTS)/$(k))
 
-$(KGFILES_A): | $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip
+$(ARTIFACTS)/dnssec-keygen.exe: $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip
 	(cd "$(ARTIFACTS)"; mkdir tmp; cd tmp; unzip "../BIND$(BINDV).$(BINDARCH).zip"; cd ..; mv $(KGFILES_T) .; rm -rf tmp;)
 
 .NOTPARALLEL: $(KGFILES_A)
@@ -81,11 +81,13 @@ $(KGFILES_A): | $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip
 
 ### DNSSEC-TRIGGER
 ##############################################################################
-DNSSEC_TRIGGER_VER=0.12
+DNSSEC_TRIGGER_VER=0.14_20170106_2
 DNSSEC_TRIGGER_FN=dnssec_trigger_setup_$(DNSSEC_TRIGGER_VER).exe
+#DNSSEC_TRIGGER_URL=https://www.nlnetlabs.nl/downloads/dnssec-trigger/
+DNSSEC_TRIGGER_URL=https://www.nlnetlabs.nl/~wouter/
 
 $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN):
-	wget -O "$@" "https://www.nlnetlabs.nl/downloads/dnssec-trigger/$(DNSSEC_TRIGGER_FN)"
+	wget -O "$@" "$(DNSSEC_TRIGGER_URL)$(DNSSEC_TRIGGER_FN)"
 
 
 ### NAMECOIN
