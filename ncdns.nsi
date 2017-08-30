@@ -15,7 +15,7 @@
 
 # INSTALLER SETTINGS
 ##############################################################################
-OutFile "build\ncdns-install.exe"
+OutFile "${OUTFN}"
 
 # Jeremy Rand thinks people shouldn't change this because it might affect build
 # determinism, so any PR which changes this should probably highlight him or
@@ -46,6 +46,7 @@ Page custom ComponentDialogCreate ComponentDialogLeave
 !else
   InstallDir $PROGRAMFILES\ncdns
 !endif
+
 InstallDirRegKey HKLM "Software\Namecoin\ncdns" "InstallPath"
 ShowInstDetails show
 ShowUninstDetails show
@@ -272,7 +273,7 @@ Function DNSSECTrigger
 
   # Install DNSSEC Trigger
   DetailPrint "Installing DNSSEC Trigger..."
-  File /oname=$TEMP\dnssec_trigger_setup.exe artifacts\dnssec_trigger_setup.exe
+  File /oname=$TEMP\dnssec_trigger_setup.exe ${ARTIFACTS}\${DNSSEC_TRIGGER_FN}
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledDNSSECTrigger" 1
   ExecWait $TEMP\dnssec_trigger_setup.exe
   Delete /REBOOTOK $TEMP\dnssec_trigger_setup.exe
@@ -372,11 +373,7 @@ Function NamecoinCore
 
   # Install Namecoin Core
   DetailPrint "Installing Namecoin Core..."
-!ifdef NCDNS_64BIT
-  File /oname=$TEMP\namecoin-setup-unsigned.exe artifacts\namecoin-win64-setup-unsigned.exe
-!else
-  File /oname=$TEMP\namecoin-setup-unsigned.exe artifacts\namecoin-win32-setup-unsigned.exe
-!endif
+  File /oname=$TEMP\namecoin-setup-unsigned.exe ${ARTIFACTS}\${NAMECOIN_FN}
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore" 1
   ExecWait $TEMP\namecoin-setup-unsigned.exe
   Delete /REBOOTOK $TEMP\namecoin-setup-unsigned.exe
@@ -425,24 +422,24 @@ Function Files
   CreateDirectory $INSTDIR\bin
   CreateDirectory $INSTDIR\etc
   File /oname=$INSTDIR\namecoin.ico media\namecoin.ico
-  File /oname=$INSTDIR\bin\ncdns.exe artifacts\ncdns.exe
-  File /oname=$INSTDIR\etc\ncdns.conf artifacts\ncdns.conf
+  File /oname=$INSTDIR\bin\ncdns.exe ${ARTIFACTS}\ncdns.exe
+  File /oname=$INSTDIR\etc\ncdns.conf ${NEUTRAL_ARTIFACTS}\ncdns.conf
 
-  File /oname=$INSTDIR\bin\dnssec-keygen.exe artifacts\dnssec-keygen.exe
-  File /oname=$INSTDIR\bin\libisc.dll artifacts\libisc.dll
-  File /oname=$INSTDIR\bin\libdns.dll artifacts\libdns.dll
-  File /oname=$INSTDIR\bin\libeay32.dll artifacts\libeay32.dll
-  File /oname=$INSTDIR\bin\libxml2.dll artifacts\libxml2.dll
+  File /oname=$INSTDIR\bin\dnssec-keygen.exe ${ARTIFACTS}\dnssec-keygen.exe
+  File /oname=$INSTDIR\bin\libisc.dll ${ARTIFACTS}\libisc.dll
+  File /oname=$INSTDIR\bin\libdns.dll ${ARTIFACTS}\libdns.dll
+  File /oname=$INSTDIR\bin\libeay32.dll ${ARTIFACTS}\libeay32.dll
+  File /oname=$INSTDIR\bin\libxml2.dll ${ARTIFACTS}\libxml2.dll
 
-#!if /FileExists "artifacts\ncdt.exe"
+#!if /FileExists "${ARTIFACTS}\ncdt.exe"
 # This is listed in NSIS.chm but doesn't appear to be supported on the POSIX
 # makensis version I'm using. Bleh.
 #!endif
 
-  File /nonfatal /oname=$INSTDIR\bin\ncdt.exe artifacts\ncdt.exe
-  File /nonfatal /oname=$INSTDIR\bin\ncdumpzone.exe artifacts\ncdumpzone.exe
-  File /nonfatal /oname=$INSTDIR\bin\generate_nmc_cert.exe artifacts\generate_nmc_cert.exe
-  File /nonfatal /oname=$INSTDIR\bin\q.exe artifacts\q.exe
+  File /nonfatal /oname=$INSTDIR\bin\ncdt.exe ${ARTIFACTS}\ncdt.exe
+  File /nonfatal /oname=$INSTDIR\bin\ncdumpzone.exe ${ARTIFACTS}\ncdumpzone.exe
+  File /nonfatal /oname=$INSTDIR\bin\generate_nmc_cert.exe ${ARTIFACTS}\generate_nmc_cert.exe
+  File /nonfatal /oname=$INSTDIR\bin\q.exe ${ARTIFACTS}\q.exe
 FunctionEnd
 
 Function FilesSecurePre
@@ -623,7 +620,7 @@ Function TrustConfig
   StrCpy $ChromiumFound 0
   StrCpy $ChromiumRejected 0
 
-  File /oname=$PLUGINSDIR\tlsrestrict_chromium_tool.exe artifacts\tlsrestrict_chromium_tool.exe
+  File /oname=$PLUGINSDIR\tlsrestrict_chromium_tool.exe ${ARTIFACTS}\tlsrestrict_chromium_tool.exe
 
   # Configure Chromium installations.
   StrCpy $CurChromium_TransportSecurity "$LOCALAPPDATA\Google\Chrome\User Data\Default\TransportSecurity"
