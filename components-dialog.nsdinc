@@ -60,11 +60,11 @@ Function fnc_components_dialog_Create
   ${NSD_CreateRadioButton} 15.8u 35.69u 268.56u 14.77u "NAMECOIN_NODE_YES"
   Pop $hCtl_components_dialog_NamecoinCore_Yes
   ${NSD_AddStyle} $hCtl_components_dialog_NamecoinCore_Yes ${WS_GROUP}
+  ${NSD_Check} $hCtl_components_dialog_NamecoinCore_Yes
   
   ; === NamecoinCore_SPV (type: RadioButton) ===
   ${NSD_CreateRadioButton} 15.8u 50.46u 268.56u 14.77u "NAMECOIN_NODE_SPV"
   Pop $hCtl_components_dialog_NamecoinCore_SPV
-  ${NSD_Check} $hCtl_components_dialog_NamecoinCore_SPV
   
   ; === NamecoinCore_No (type: RadioButton) ===
   ${NSD_CreateRadioButton} 15.8u 65.23u 268.56u 14.77u "NAMECOIN_NODE_NO"

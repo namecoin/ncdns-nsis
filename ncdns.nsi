@@ -215,25 +215,21 @@ Function ComponentDialogCreate
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was detected."
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Automatically configure Namecoin Core (recommended)"
     ${If} $JREDetected == 1
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client instead"
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client instead (lighter, less secure)"
     ${Else}
       ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client (Java must be installed)"
       EnableWindow $hCtl_components_dialog_NamecoinCore_SPV 0
     ${EndIf}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will configure Namecoin Core myself (manual configuration required)"
-
-    # Use Namecoin Core by default if it's already installed.
-    ${NSD_SetState} $hCtl_components_dialog_NamecoinCore_Yes ${BST_CHECKED}
   ${Else}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was not detected."
     ${If} $JREDetected == 1
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core"
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client (recommended)"
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (heavier, more secure)"
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client (lighter, less secure)"
     ${Else}
       ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (recommended)"
       ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client (Java must be installed)"
       EnableWindow $hCtl_components_dialog_NamecoinCore_SPV 0
-      ${NSD_SetState} $hCtl_components_dialog_NamecoinCore_Yes ${BST_CHECKED}
     ${EndIf}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will provide my own Namecoin node (manual configuration required)"
   ${EndIf}
@@ -510,8 +506,8 @@ Function BitcoinJ
   FileClose $4
 
   # Create shortcuts to the batch script.
-  CreateShortcut "$SMPROGRAMS\BitcoinJ.lnk" "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd"
-  CreateShortcut "$DESKTOP\BitcoinJ.lnk" "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd"
+  CreateShortcut "$SMPROGRAMS\Namecoin BitcoinJ.lnk" "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd"
+  CreateShortcut "$DESKTOP\Namecoin BitcoinJ.lnk" "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd"
 !endif
 FunctionEnd
 
@@ -525,8 +521,8 @@ Function un.BitcoinJ
 
   # Remove BitcoinJ.
   DetailPrint "Removing BitcoinJ..."
-  Delete "$SMPROGRAMS\BitcoinJ.lnk"
-  Delete "$DESKTOP\BitcoinJ.lnk"
+  Delete "$SMPROGRAMS\Namecoin BitcoinJ.lnk"
+  Delete "$DESKTOP\Namecoin BitcoinJ.lnk"
   Delete "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd"
   Delete /REBOOTOK $INSTDIR\BitcoinJ\bitcoinj-daemon.jar
   RMDir $INSTDIR\BitcoinJ
