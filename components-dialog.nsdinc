@@ -8,14 +8,15 @@
 ; handle variables
 Var hCtl_components_dialog
 Var hCtl_components_dialog_Unbound_Group
-Var hCtl_components_dialog_Unbound_No
-Var hCtl_components_dialog_Unbound_Yes
 Var hCtl_components_dialog_Unbound_Status
-Var hCtl_components_dialog_IntroLabel
+Var hCtl_components_dialog_Unbound_Yes
+Var hCtl_components_dialog_Unbound_No
 Var hCtl_components_dialog_NamecoinCore_Group
-Var hCtl_components_dialog_NamecoinCore_No
-Var hCtl_components_dialog_NamecoinCore_Yes
 Var hCtl_components_dialog_NamecoinCore_Status
+Var hCtl_components_dialog_NamecoinCore_Yes
+Var hCtl_components_dialog_NamecoinCore_SPV
+Var hCtl_components_dialog_NamecoinCore_No
+Var hCtl_components_dialog_IntroLabel
 
 
 ; dialog create function
@@ -30,44 +31,48 @@ Function fnc_components_dialog_Create
   !insertmacro MUI_HEADER_TEXT "ncdns for Windows" "Select components"
   
   ; === Unbound_Group (type: GroupBox) ===
-  ${NSD_CreateGroupBox} 7.9u 78.77u 280.41u 57.85u "Unbound"
+  ${NSD_CreateGroupBox} 7.9u 89.23u 280.41u 49.23u "Unbound"
   Pop $hCtl_components_dialog_Unbound_Group
   
-  ; === Unbound_No (type: RadioButton) ===
-  ${NSD_CreateRadioButton} 15.8u 115.08u 268.56u 14.77u "UNBOUND_NO"
-  Pop $hCtl_components_dialog_Unbound_No
-  ${NSD_AddStyle} $hCtl_components_dialog_Unbound_No ${WS_GROUP}
-  
-  ; === Unbound_Yes (type: RadioButton) ===
-  ${NSD_CreateRadioButton} 15.8u 102.15u 268.56u 14.77u "UNBOUND_YES"
-  Pop $hCtl_components_dialog_Unbound_Yes
-  ${NSD_Check} $hCtl_components_dialog_Unbound_Yes
-  
   ; === Unbound_Status (type: Label) ===
-  ${NSD_CreateLabel} 15.8u 89.23u 268.56u 11.08u "UNBOUND_STATUS"
+  ${NSD_CreateLabel} 15.8u 99.69u 268.56u 11.08u "UNBOUND_STATUS"
   Pop $hCtl_components_dialog_Unbound_Status
   
-  ; === IntroLabel (type: Label) ===
-  ${NSD_CreateLabel} 10.53u -0.62u 277.77u 9.23u "ncdns for Windows requires a Namecoin node and Unbound (or another DNS resolver) to operate."
-  Pop $hCtl_components_dialog_IntroLabel
+  ; === Unbound_Yes (type: RadioButton) ===
+  ${NSD_CreateRadioButton} 15.8u 107.69u 268.56u 14.77u "UNBOUND_YES"
+  Pop $hCtl_components_dialog_Unbound_Yes
+  ${NSD_AddStyle} $hCtl_components_dialog_Unbound_Yes ${WS_GROUP}
+  ${NSD_Check} $hCtl_components_dialog_Unbound_Yes
+  
+  ; === Unbound_No (type: RadioButton) ===
+  ${NSD_CreateRadioButton} 15.8u 122.46u 268.56u 14.77u "UNBOUND_NO"
+  Pop $hCtl_components_dialog_Unbound_No
   
   ; === NamecoinCore_Group (type: GroupBox) ===
-  ${NSD_CreateGroupBox} 7.9u 17.23u 280.41u 57.85u "Namecoin Node"
+  ${NSD_CreateGroupBox} 7.9u 17.23u 280.41u 68.31u "Namecoin Node"
   Pop $hCtl_components_dialog_NamecoinCore_Group
   
-  ; === NamecoinCore_No (type: RadioButton) ===
-  ${NSD_CreateRadioButton} 15.8u 53.54u 268.56u 14.77u "NAMECOIN_CORE_NO"
-  Pop $hCtl_components_dialog_NamecoinCore_No
-  ${NSD_AddStyle} $hCtl_components_dialog_NamecoinCore_No ${WS_GROUP}
+  ; === NamecoinCore_Status (type: Label) ===
+  ${NSD_CreateLabel} 15.8u 27.69u 268.56u 11.08u "NAMECOIN_NODE_STATUS"
+  Pop $hCtl_components_dialog_NamecoinCore_Status
   
   ; === NamecoinCore_Yes (type: RadioButton) ===
-  ${NSD_CreateRadioButton} 15.8u 40.62u 268.56u 14.77u "NAMECOIN_CORE_YES"
+  ${NSD_CreateRadioButton} 15.8u 35.69u 268.56u 14.77u "NAMECOIN_NODE_YES"
   Pop $hCtl_components_dialog_NamecoinCore_Yes
+  ${NSD_AddStyle} $hCtl_components_dialog_NamecoinCore_Yes ${WS_GROUP}
   ${NSD_Check} $hCtl_components_dialog_NamecoinCore_Yes
   
-  ; === NamecoinCore_Status (type: Label) ===
-  ${NSD_CreateLabel} 15.8u 27.69u 268.56u 11.08u "NAMECOIN_CORE_STATUS"
-  Pop $hCtl_components_dialog_NamecoinCore_Status
+  ; === NamecoinCore_SPV (type: RadioButton) ===
+  ${NSD_CreateRadioButton} 15.8u 50.46u 268.56u 14.77u "NAMECOIN_NODE_SPV"
+  Pop $hCtl_components_dialog_NamecoinCore_SPV
+  
+  ; === NamecoinCore_No (type: RadioButton) ===
+  ${NSD_CreateRadioButton} 15.8u 65.23u 268.56u 14.77u "NAMECOIN_NODE_NO"
+  Pop $hCtl_components_dialog_NamecoinCore_No
+  
+  ; === IntroLabel (type: Label) ===
+  ${NSD_CreateLabel} 10.53u -0.62u 277.77u 16u "ncdns for Windows requires a Namecoin node and Unbound (or another DNS resolver) to operate."
+  Pop $hCtl_components_dialog_IntroLabel
   
 FunctionEnd
 
