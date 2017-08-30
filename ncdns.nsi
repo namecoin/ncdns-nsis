@@ -506,7 +506,7 @@ Function BitcoinJ
 
   # Write a batch script to enable BitcoinJ to be easily launched.
   FileOpen $4 "$INSTDIR\BitcoinJ\Launch BitcoinJ.cmd" w
-  FileWrite $4 'C:$\r$\ncd "C:\ProgramData\NamecoinBitcoinJ"$\r$\njava -jar "$INSTDIR\BitcoinJ\bitcoinj-daemon.jar" --connection.proxyenabled=false --connection.streamisolation=false --server.port=6563$\r$\n'
+  FileWrite $4 'C:$\r$\ncd "C:\ProgramData\NamecoinBitcoinJ"$\r$\njava -jar "$INSTDIR\BitcoinJ\bitcoinj-daemon.jar" --connection.proxyenabled=false --connection.streamisolation=false --namelookup.latest.algo=leveldbtxcache --server.port=6563$\r$\n'
   FileClose $4
 
   # Create shortcuts to the batch script.
