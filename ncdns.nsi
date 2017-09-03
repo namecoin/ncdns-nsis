@@ -91,8 +91,11 @@ Var /GLOBAL UseSPV
 Var /GLOBAL NamecoinCoreDetected
 Var /GLOBAL UnboundDetected
 
+Var /GLOBAL CurChromium_Path
 Var /GLOBAL CurChromium_TransportSecurity
 Var /GLOBAL CurChromium_lockfile
+Var /GLOBAL FindHandle
+Var /GLOBAL ProfileName
 Var /GLOBAL ChromiumFound
 Var /GLOBAL ChromiumRejected
 Var /GLOBAL JREPath
@@ -742,12 +745,16 @@ Function TrustConfig
   File /oname=$PLUGINSDIR\tlsrestrict_chromium_tool.exe ${ARTIFACTS}\tlsrestrict_chromium_tool.exe
 
   # Configure Chromium installations.
-  StrCpy $CurChromium_TransportSecurity "$LOCALAPPDATA\Google\Chrome\User Data\Default\TransportSecurity"
+  StrCpy $CurChromium_Path "$LOCALAPPDATA\Google\Chrome\User Data"
   StrCpy $CurChromium_lockfile "$LOCALAPPDATA\Google\Chrome\User Data\lockfile"
-  Call ChromiumConfigAtLoc
-  StrCpy $CurChromium_TransportSecurity "$LOCALAPPDATA\Chromium\User Data\Default\TransportSecurity"
+  Call ChromiumConfigAtLocSet
+  StrCpy $CurChromium_Path "$LOCALAPPDATA\Google\Chrome SxS\User Data"
+  StrCpy $CurChromium_lockfile "$LOCALAPPDATA\Google\Chrome SxS\User Data\lockfile"
+  Call ChromiumConfigAtLocSet
+  StrCpy $CurChromium_Path "$LOCALAPPDATA\Chromium\User Data"
   StrCpy $CurChromium_lockfile "$LOCALAPPDATA\Chromium\User Data\lockfile"
-  Call ChromiumConfigAtLoc
+  Call ChromiumConfigAtLocSet
+
   StrCpy $CurChromium_TransportSecurity "$APPDATA\Opera Software\Opera Stable\TransportSecurity"
   StrCpy $CurChromium_lockfile "$APPDATA\Opera Software\Opera Stable\lockfile"
   Call ChromiumConfigAtLoc
@@ -766,6 +773,24 @@ FunctionEnd
 
 Function un.TrustConfig
   Call un.TrustInjectionConfig
+FunctionEnd
+
+Function ChromiumConfigAtLocSet
+  ClearErrors
+  FindFirst $FindHandle $ProfileName $CurChromium_Path\*
+again:
+  IfErrors done
+  DetailPrint "PFN '$ProfileName' under $CurChromium_Path"
+
+  StrCpy $CurChromium_TransportSecurity "$CurChromium_Path\$ProfileName\TransportSecurity"
+  Call ChromiumConfigAtLoc
+
+  ClearErrors
+  FindNext $FindHandle $ProfileName
+  Goto again
+
+done:
+  FindClose $FindHandle
 FunctionEnd
 
 Function ChromiumConfigAtLoc
