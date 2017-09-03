@@ -78,7 +78,6 @@ VIAddVersionKey "Comments" "ncdns Installer"
 
 # VARIABLES
 ##############################################################################
-Var /GLOBAL Reinstalling
 Var /GLOBAL UnboundConfPath
 Var /GLOBAL UnboundFragmentLocation
 Var /GLOBAL DNSSECTriggerUninstallCommand
@@ -116,6 +115,9 @@ Function .onInit
   # Make sections mandatory.
   Call ConfigSections
 
+  # Detect if already installed.
+  Call CheckReinstall
+
   # Detect already installed dependencies.
   Call DetectVC8 # aborts on failure
   Call DetectNamecoinCore
@@ -125,6 +127,17 @@ FunctionEnd
 
 Function un.onInit
   SetShellVarContext all
+FunctionEnd
+
+Function CheckReinstall
+  ClearErrors
+  ReadRegStr $0 HKLM "System\CurrentControlSet\Services\ncdns" "ImagePath"
+  IfErrors not_installed
+
+  MessageBox "MB_OK|MB_ICONSTOP" "ncdns for Windows is already installed.$\n$\nTo reinstall ncdns for Windows, first uninstall it."
+  Abort
+
+not_installed:
 FunctionEnd
 
 Function DetectVC8
@@ -265,7 +278,6 @@ FunctionEnd
 ##############################################################################
 Section "ncdns" Sec_ncdns
   SetOutPath $INSTDIR
-  Call ReinstallCheck
   Call Reg
   Call DNSSECTrigger
   Call NamecoinCoreConfig
@@ -624,11 +636,6 @@ FunctionEnd
 # SERVICE INSTALLATION/UNINSTALLATION
 ##############################################################################
 Function Service
-  ${If} $Reinstalling = 1
-    nsExec::Exec 'net stop ncdns'
-    nsExec::ExecToLog 'sc delete ncdns'
-  ${EndIf}
-
   nsExec::ExecToLog 'sc create ncdns binPath= "ncdns.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "ncdns"'
   # Use service SID.
   nsExec::ExecToLog 'sc sidtype ncdns restricted'
@@ -865,18 +872,6 @@ Function un.TrustInjectionConfig
   Delete $PLUGINSDIR\regpermrun.cmd
   Delete $PLUGINSDIR\regpermrun.ps1
   Delete $PLUGINSDIR\regperm.ps1
-FunctionEnd
-
-
-# REINSTALL TESTING
-##############################################################################
-Function ReinstallCheck
-  StrCpy $Reinstalling 1
-  ClearErrors
-  ReadRegStr $0 HKLM "System\CurrentControlSet\Services\ncdns" "ImagePath"
-  IfErrors 0 reinstalling
-  StrCpy $Reinstalling 0 ;; new install
-reinstalling:
 FunctionEnd
 
 
