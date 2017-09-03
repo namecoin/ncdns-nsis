@@ -393,8 +393,11 @@ FunctionEnd
 ##############################################################################
 Function NamecoinCoreConfig
   ${If} $SkipNamecoinCore == 1
+    DetailPrint "Not configuring Namecoin Core."
     Return
   ${EndIf}
+
+  DetailPrint "Configuring Namecoin Core..."
 
   # We have to set 'server=1' in namecoin.conf. We can use cookies to get the
   # rest, so that's all we need.
@@ -441,9 +444,13 @@ Function NamecoinCore
 !ifndef NO_NAMECOIN_CORE
   ${If} $NamecoinCoreDetected == 1
     # Already have Namecoin Core
+    DetailPrint "An existing Namecoin Core installation was detected. Not installing."
     Return
   ${EndIf}
+  DetailPrint "An existing Namecoin Core installation was NOT detected."
+
   ${If} $SkipNamecoinCore == ${BST_CHECKED}
+    DetailPrint "Not installing Namecoin Core."
     Return
   ${EndIf}
 
@@ -497,6 +504,7 @@ Function BitcoinJ
 !ifndef NO_BITCOINJ
   ${If} $UseSPV == ${BST_UNCHECKED}
     # User did not elect to use SPV.
+    DetailPrint "Not installing BitcoinJ."
     Return
   ${EndIf}
 
