@@ -139,7 +139,6 @@ Function CheckReinstall
 
 not_installed:
 FunctionEnd
-
 Function DetectVC8
   # Check that MSVC8 runtime is installed for dnssec-keygen.
   FindFirst $0 $1 $WINDIR\WinSxS\x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.*
@@ -350,8 +349,16 @@ Function DNSSECTrigger
   # Install DNSSEC Trigger
   DetailPrint "Installing DNSSEC Trigger..."
   File /oname=$TEMP\dnssec_trigger_setup.exe ${ARTIFACTS}\${DNSSEC_TRIGGER_FN}
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledDNSSECTrigger" 1
+again:
   ExecWait $TEMP\dnssec_trigger_setup.exe
+
+  Call DetectUnbound
+  ${If} $UnboundDetected == 0
+    MessageBox "MB_OKCANCEL|MB_ICONSTOP" "DNSSEC Trigger was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
+    Abort
+  ${EndIf}
+
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledDNSSECTrigger" 1
   Delete /REBOOTOK $TEMP\dnssec_trigger_setup.exe
 !endif
 FunctionEnd
@@ -457,8 +464,16 @@ Function NamecoinCore
   # Install Namecoin Core
   DetailPrint "Installing Namecoin Core..."
   File /oname=$TEMP\namecoin-setup-unsigned.exe ${ARTIFACTS}\${NAMECOIN_FN}
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore" 1
+again:
   ExecWait $TEMP\namecoin-setup-unsigned.exe
+
+  Call DetectNamecoinCore
+  ${If} $NamecoinCoreDetected == 0
+    MessageBox "MB_OKCANCEL|MB_ICONSTOP" "Namecoin Core was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
+    Abort
+  ${EndIf}
+
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore" 1
   Delete /REBOOTOK $TEMP\namecoin-setup-unsigned.exe
 !endif
 FunctionEnd
