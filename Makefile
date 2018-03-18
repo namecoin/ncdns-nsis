@@ -65,7 +65,7 @@ $(ARTIFACTS)/ncdns.exe: $(ARTIFACTS)/$(NCDNS_ARCFN)
 
 ### DNSSEC-KEYGEN
 ##############################################################################
-BINDV=9.11.0
+BINDV=9.12.1
 $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip:
 	wget -O "$@" "https://ftp.isc.org/isc/bind/$(BINDV)/BIND$(BINDV).$(BINDARCH).zip"
 
