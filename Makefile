@@ -65,7 +65,7 @@ $(ARTIFACTS)/ncdns.exe: $(ARTIFACTS)/$(NCDNS_ARCFN)
 
 ### DNSSEC-KEYGEN
 ##############################################################################
-BINDV=9.11.0
+BINDV=9.12.1
 $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip:
 	wget -O "$@" "https://ftp.isc.org/isc/bind/$(BINDV)/BIND$(BINDV).$(BINDARCH).zip"
 
@@ -81,10 +81,10 @@ $(ARTIFACTS)/dnssec-keygen.exe: $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip
 
 ### DNSSEC-TRIGGER
 ##############################################################################
-DNSSEC_TRIGGER_VER=0.14_20170106_2
+DNSSEC_TRIGGER_VER=0.15
 DNSSEC_TRIGGER_FN=dnssec_trigger_setup_$(DNSSEC_TRIGGER_VER).exe
-#DNSSEC_TRIGGER_URL=https://www.nlnetlabs.nl/downloads/dnssec-trigger/
-DNSSEC_TRIGGER_URL=https://www.nlnetlabs.nl/~wouter/
+DNSSEC_TRIGGER_URL=https://www.nlnetlabs.nl/downloads/dnssec-trigger/
+#DNSSEC_TRIGGER_URL=https://www.nlnetlabs.nl/~wouter/
 
 $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN):
 	wget -O "$@" "$(DNSSEC_TRIGGER_URL)$(DNSSEC_TRIGGER_FN)"
