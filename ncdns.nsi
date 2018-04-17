@@ -71,7 +71,7 @@ VIAddVersionKey "FileVersion" "${NCDNS_PRODVER}"
 !endif
 VIAddVersionKey "OriginalFilename" "ncdns-install.exe"
 VIAddVersionKey "CompanyName" "Namecoin"
-VIAddVersionKey "LegalCopyright" "2017 Hugo Landau <hlandau@devever.net>"
+VIAddVersionKey "LegalCopyright" "2018 Hugo Landau <hlandau@devever.net>"
 VIAddVersionKey "LegalTrademarks" "ncdns, Namecoin"
 VIAddVersionKey "Comments" "ncdns Installer"
 
