@@ -283,6 +283,7 @@ Section "ncdns" Sec_ncdns
   Call NamecoinCore
   Call Service
   Call Files
+  Call FilesConfig
   Call BitcoinJ
   Call TrustConfig
   Call FilesSecurePre
@@ -597,6 +598,20 @@ Function Files
   File /nonfatal /oname=$INSTDIR\bin\ncdumpzone.exe ${ARTIFACTS}\ncdumpzone.exe
   File /nonfatal /oname=$INSTDIR\bin\generate_nmc_cert.exe ${ARTIFACTS}\generate_nmc_cert.exe
   File /nonfatal /oname=$INSTDIR\bin\q.exe ${ARTIFACTS}\q.exe
+FunctionEnd
+
+Function FilesConfig
+  ${If} $SkipNamecoinCore == 1
+    DetailPrint "Not configuring use of cookie auth."
+    Return
+  ${EndIf}
+
+  # Configure ncdns to use cookie auth.
+  DetailPrint "Configuring use of cookie auth."
+  FileOpen $4 "$INSTDIR\etc\ncdns.conf" a
+  FileSeek $4 0 END
+  FileWrite $4 '$\r$\n$\r$\n## ++COOKIE++$\r$\n## Added automatically by installer because Namecoin Core is being used, so using cookie auth.$\r$\nnamecoinrpccookiepath="C:/ProgramData/NamecoinCookie/.cookie"$\r$\n## ++/COOKIE++$\r$\n$\r$\n'
+  FileClose $4
 FunctionEnd
 
 Function FilesSecurePre
