@@ -407,6 +407,9 @@ Function NamecoinCoreConfig
 
   DetailPrint "Configuring Namecoin Core..."
 
+  # We need the current user's $APPDATA for configuring Namecoin Core.
+  SetShellVarContext current
+
   # We have to set 'server=1' in namecoin.conf. We can use cookies to get the
   # rest, so that's all we need.
   #
@@ -424,6 +427,7 @@ Function NamecoinCoreConfig
   WriteRegStr HKCU "Software\Namecoin\Namecoin-Qt" "strDataDir" $NamecoinCoreDataDir
 
 haveDataDir:
+  DetailPrint 'Creating directory "$NamecoinCoreDataDir"...'
   CreateDirectory $NamecoinCoreDataDir
 
   # Configure cookie directory.
@@ -443,6 +447,9 @@ haveDataDir:
   nsExec::ExecToLog '$PLUGINSDIR\confignamecoinconf.cmd'
   Delete $PLUGINSDIR\confignamecoinconf.ps1
   Delete $PLUGINSDIR\confignamecoinconf.cmd
+
+  # Restore SetShellVarContext
+  SetShellVarContext all
 FunctionEnd
 
 
