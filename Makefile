@@ -81,7 +81,7 @@ $(ARTIFACTS)/dnssec-keygen.exe: $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip
 
 ### DNSSEC-TRIGGER
 ##############################################################################
-DNSSEC_TRIGGER_VER=0.15
+DNSSEC_TRIGGER_VER=0.17
 DNSSEC_TRIGGER_FN=dnssec_trigger_setup_$(DNSSEC_TRIGGER_VER).exe
 DNSSEC_TRIGGER_URL=https://www.nlnetlabs.nl/downloads/dnssec-trigger/
 #DNSSEC_TRIGGER_URL=https://www.nlnetlabs.nl/~wouter/
