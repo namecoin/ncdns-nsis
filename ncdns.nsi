@@ -99,10 +99,17 @@ Var /GLOBAL ChromiumFound
 Var /GLOBAL ChromiumRejected
 Var /GLOBAL JREPath
 Var /GLOBAL JREDetected
+Var /GLOBAL JRE32Detected
+Var /GLOBAL JRE64Detected
+Var /GLOBAL VC2010_x86_32Detected
+Var /GLOBAL VC2010_x86_64Detected
+Var /GLOBAL BitcoinJRequirementsMet
+Var /GLOBAL BitcoinJRequirementsError
 
 # PRELAUNCH CHECKS
 ##############################################################################
 !Include WinVer.nsh
+!include x64.nsh
 
 Function .onInit
   ${IfNot} ${AtLeastWinVista}
@@ -123,6 +130,9 @@ Function .onInit
   Call DetectNamecoinCore
   Call DetectUnbound
   Call DetectJRE
+  Call DetectVC2010_x86_32
+  Call DetectVC2010_x86_64
+  Call DetectBitcoinJRequirements
 FunctionEnd
 
 Function un.onInit
@@ -153,6 +163,32 @@ notfound:
 
 found:
   FindClose $0
+FunctionEnd
+
+Function DetectVC2010_x86_32
+  # https://blogs.msdn.microsoft.com/astebner/2010/05/05/mailbag-how-to-detect-the-presence-of-the-visual-c-2010-redistributable-package/
+  # https://stackoverflow.com/a/34199260
+  ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x86" "Installed"
+  ${If} $0 != "1"
+    Push 0
+    Pop $VC2010_x86_32Detected
+  ${Else}
+    Push 1
+    Pop $VC2010_x86_32Detected
+  ${EndIf}
+FunctionEnd
+
+Function DetectVC2010_x86_64
+  # https://blogs.msdn.microsoft.com/astebner/2010/05/05/mailbag-how-to-detect-the-presence-of-the-visual-c-2010-redistributable-package/
+  # https://stackoverflow.com/a/34199260
+  ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\10.0\VC\VCRedist\x64" "Installed"
+  ${If} $0 != "1"
+    Push 0
+    Pop $VC2010_x86_64Detected
+  ${Else}
+    Push 1
+    Pop $VC2010_x86_64Detected
+  ${EndIf}
 FunctionEnd
 
 Function DetectNamecoinCore
@@ -188,15 +224,35 @@ Var /GLOBAL DetectJRE_W
 Function DetectJRE
   StrCpy $JREDetected 0
 
+  # Check for 64-bit JRE
+  ${If} ${RunningX64}
+    SetRegView 64
+    StrCpy $DetectJRE_W "SOFTWARE\JavaSoft\Java Runtime Environment"
+    Call DetectJREUnder
+    SetRegView lastused
+
+    ${If} $JREDetected == 1
+      StrCpy $JRE32Detected 0
+      StrCpy $JRE64Detected 1
+      Return
+    ${EndIf}
+  ${EndIf}
+
+  # Check for 32-bit JRE
+  SetRegView 32
   StrCpy $DetectJRE_W "SOFTWARE\JavaSoft\Java Runtime Environment"
   Call DetectJREUnder
+  SetRegView lastused
 
   ${If} $JREDetected == 1
+    StrCpy $JRE32Detected 1
+    StrCpy $JRE64Detected 0
     Return
   ${EndIf}
 
-  StrCpy $DetectJRE_W "SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment"
-  Call DetectJREUnder
+  # No JRE detected
+  StrCpy $JRE32Detected 0
+  StrCpy $JRE64Detected 0
 FunctionEnd
 
 Function DetectJREUnder
@@ -215,6 +271,34 @@ not_found:
   Return
 FunctionEnd
 
+Function DetectBitcoinJRequirements
+  ${If} $JRE64Detected == 1
+    ${If} $VC2010_x86_64Detected == 1
+      Push 1
+      Pop $BitcoinJRequirementsMet
+      StrCpy $BitcoinJRequirementsError ""
+      Return
+    ${EndIf}
+  ${EndIf}
+
+  ${If} $JRE32Detected == 1
+    ${If} $VC2010_x86_32Detected == 1
+      Push 1
+      Pop $BitcoinJRequirementsMet
+      StrCpy $BitcoinJRequirementsError ""
+      Return
+    ${EndIf}
+  ${EndIf}
+
+  ${If} $JREDetected == 0
+    StrCpy $BitcoinJRequirementsError "Java must be installed"
+  ${Else}
+    StrCpy $BitcoinJRequirementsError "Microsoft Visual C++ 2010 Redistributable Package must be installed"
+  ${EndIf}
+
+  Push 0
+  Pop $BitcoinJRequirementsMet
+FunctionEnd
 
 # DIALOG HELPERS
 ##############################################################################
@@ -229,21 +313,21 @@ Function ComponentDialogCreate
   ${If} $NamecoinCoreDetected == 1
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was detected."
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Automatically configure Namecoin Core (recommended)"
-    ${If} $JREDetected == 1
+    ${If} $BitcoinJRequirementsMet == 1
       ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client instead (lighter, less secure)"
     ${Else}
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client (Java must be installed)"
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client ($BitcoinJRequirementsError)"
       EnableWindow $hCtl_components_dialog_NamecoinCore_SPV 0
     ${EndIf}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will configure Namecoin Core myself (manual configuration required)"
   ${Else}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was not detected."
-    ${If} $JREDetected == 1
+    ${If} $BitcoinJRequirementsMet == 1
       ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (heavier, more secure)"
       ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client (lighter, less secure)"
     ${Else}
       ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (recommended)"
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client (Java must be installed)"
+      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client ($BitcoinJRequirementsError)"
       EnableWindow $hCtl_components_dialog_NamecoinCore_SPV 0
     ${EndIf}
     ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will provide my own Namecoin node (manual configuration required)"
@@ -277,6 +361,7 @@ FunctionEnd
 ##############################################################################
 Section "ncdns" Sec_ncdns
   SetOutPath $INSTDIR
+  Call LogRequirementsChecks
   Call Reg
   Call DNSSECTrigger
   Call NamecoinCoreConfig
@@ -310,6 +395,38 @@ Section "Uninstall"
   RMDir "$INSTDIR"
 SectionEnd
 
+
+Function LogRequirementsChecks
+  ${If} $JREDetected == 1
+    ${If} $JRE32Detected == 1
+      DetailPrint "JRE is 32-bit."
+    ${EndIf}
+
+    ${If} $JRE64Detected == 1
+      DetailPrint "JRE is 64-bit."
+    ${EndIf}
+  ${Else}
+    DetailPrint "JRE was NOT detected."
+  ${EndIf}
+
+  ${If} $VC2010_x86_32Detected == 1
+    DetailPrint "Microsoft Visual C++ 2010 Redistributable Package 32-bit was detected."
+  ${Else}
+    DetailPrint "Microsoft Visual C++ 2010 Redistributable Package 32-bit was NOT detected."
+  ${EndIf}
+
+  ${If} $VC2010_x86_64Detected == 1
+    DetailPrint "Microsoft Visual C++ 2010 Redistributable Package 64-bit was detected."
+  ${Else}
+    DetailPrint "Microsoft Visual C++ 2010 Redistributable Package 64-bit was NOT detected."
+  ${EndIf}
+
+  ${If} $BitcoinJRequirementsMet == 1
+    DetailPrint "BitcoinJ can be installed."
+  ${Else}
+    DetailPrint "$BitcoinJRequirementsError before BitcoinJ can be installed."
+  ${EndIf}
+FunctionEnd
 
 # REGISTRY AND UNINSTALL INFORMATION INSTALLATION/UNINSTALLATION
 ##############################################################################
