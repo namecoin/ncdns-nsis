@@ -845,6 +845,24 @@ Function Files
   File /nonfatal /oname=$INSTDIR\bin\ncdumpzone.exe ${ARTIFACTS}\ncdumpzone.exe
   File /nonfatal /oname=$INSTDIR\bin\generate_nmc_cert.exe ${ARTIFACTS}\generate_nmc_cert.exe
   File /nonfatal /oname=$INSTDIR\bin\q.exe ${ARTIFACTS}\q.exe
+
+  File /oname=$INSTDIR\bin\mar-tools-32\nss-certutil.exe ${ARTIFACTS}\mar-tools-32\nss-certutil.exe
+  File /oname=$INSTDIR\bin\mar-tools-32\freebl3.dll ${ARTIFACTS}\mar-tools-32\freebl3.dll
+  File /oname=$INSTDIR\bin\mar-tools-32\libssp-0.dll ${ARTIFACTS}\mar-tools-32\libssp-0.dll
+  File /oname=$INSTDIR\bin\mar-tools-32\mozglue.dll ${ARTIFACTS}\mar-tools-32\mozglue.dll
+  File /oname=$INSTDIR\bin\mar-tools-32\nss3.dll ${ARTIFACTS}\mar-tools-32\nss3.dll
+  File /oname=$INSTDIR\bin\mar-tools-32\nssdbm3.dll ${ARTIFACTS}\mar-tools-32\nssdbm3.dll
+  File /oname=$INSTDIR\bin\mar-tools-32\softokn3.dll ${ARTIFACTS}\mar-tools-32\softokn3.dll
+
+  !ifdef NCDNS_64BIT
+    File /oname=$INSTDIR\bin\mar-tools-64\nss-certutil.exe ${ARTIFACTS}\mar-tools-64\nss-certutil.exe
+    File /oname=$INSTDIR\bin\mar-tools-64\freebl3.dll ${ARTIFACTS}\mar-tools-64\freebl3.dll
+    File /oname=$INSTDIR\bin\mar-tools-64\libssp-0.dll ${ARTIFACTS}\mar-tools-64\libssp-0.dll
+    File /oname=$INSTDIR\bin\mar-tools-64\mozglue.dll ${ARTIFACTS}\mar-tools-64\mozglue.dll
+    File /oname=$INSTDIR\bin\mar-tools-64\nss3.dll ${ARTIFACTS}\mar-tools-64\nss3.dll
+    File /oname=$INSTDIR\bin\mar-tools-64\nssdbm3.dll ${ARTIFACTS}\mar-tools-64\nssdbm3.dll
+    File /oname=$INSTDIR\bin\mar-tools-64\softokn3.dll ${ARTIFACTS}\mar-tools-64\softokn3.dll
+  !endif
 FunctionEnd
 
 Function FilesConfig
@@ -888,6 +906,26 @@ Function un.Files
   Delete $INSTDIR\bin\ncdumpzone.exe
   Delete $INSTDIR\bin\generate_nmc_cert.exe
   Delete $INSTDIR\bin\q.exe
+
+  Delete $INSTDIR\bin\mar-tools-32\nss-certutil.exe
+  Delete $INSTDIR\bin\mar-tools-32\freebl3.dll
+  Delete $INSTDIR\bin\mar-tools-32\libssp-0.dll
+  Delete $INSTDIR\bin\mar-tools-32\mozglue.dll
+  Delete $INSTDIR\bin\mar-tools-32\nss3.dll
+  Delete $INSTDIR\bin\mar-tools-32\nssdbm3.dll
+  Delete $INSTDIR\bin\mar-tools-32\softokn3.dll
+  RMDir $INSTDIR\bin\mar-tools-32
+
+  !ifdef NCDNS_64BIT
+    Delete $INSTDIR\bin\mar-tools-64\nss-certutil.exe
+    Delete $INSTDIR\bin\mar-tools-64\freebl3.dll
+    Delete $INSTDIR\bin\mar-tools-64\libssp-0.dll
+    Delete $INSTDIR\bin\mar-tools-64\mozglue.dll
+    Delete $INSTDIR\bin\mar-tools-64\nss3.dll
+    Delete $INSTDIR\bin\mar-tools-64\nssdbm3.dll
+    Delete $INSTDIR\bin\mar-tools-64\softokn3.dll
+    RMDir $INSTDIR\bin\mar-tools-64
+  !endif
 
   Delete $INSTDIR\etc\ncdns.conf
   Delete $INSTDIR\etc\ksk\bit.private
