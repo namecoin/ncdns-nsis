@@ -28,11 +28,13 @@ _NCDNS_64BIT=
 _BUILD=build32
 GOARCH=386
 BINDARCH=x86
+MARARCH=32
 ifeq ($(NCDNS_64BIT),1)
 	_NCDNS_64BIT=-DNCDNS_64BIT=1
 	_BUILD=build64
 	GOARCH=amd64
 	BINDARCH=x64
+	MARARCH=64
 endif
 BUILD ?= $(_BUILD)
 
@@ -112,9 +114,32 @@ $(ARTIFACTS)/$(NAMECOIN_FN):
 $(ARTIFACTS)/q.exe:
 	(cd "$(ARTIFACTS)"; GOOS=windows GOARCH=$(GOARCH) go build github.com/miekg/exdns/q;)
 
+### MAR-TOOLS
+##############################################################################
+MARV=2018-09-08
+$(ARTIFACTS)/mar-tools-win32-$(MARV).zip:
+	wget -O "$@" "https://namecoin.org/files/mar-tools/mar-tools-$(MARV)/mar-tools-win32-$(MARV).zip"
+$(ARTIFACTS)/mar-tools-win64-$(MARV).zip:
+	wget -O "$@" "https://namecoin.org/files/mar-tools/mar-tools-$(MARV)/mar-tools-win64-$(MARV).zip"
+
+MARFILES=nss-certutil.exe freebl3.dll libssp-0.dll mozglue.dll nss3.dll nssdbm3.dll softokn3.dll
+MARFILES_T32=$(foreach k,$(MARFILES),../tmp32/mar-tools/$(k))
+MARFILES_A32=$(foreach k,$(MARFILES),$(ARTIFACTS)/mar-tools-32/$(k))
+MARFILES_T64=$(foreach k,$(MARFILES),../tmp64/mar-tools/$(k))
+MARFILES_A64=$(MARFILES_A32) $(foreach k,$(MARFILES),$(ARTIFACTS)/mar-tools-64/$(k))
+
+$(ARTIFACTS)/mar-tools-32/nss-certutil.exe: $(ARTIFACTS)/mar-tools-win32-$(MARV).zip
+	(cd "$(ARTIFACTS)"; mkdir tmp32; cd tmp32; unzip "../mar-tools-win32-$(MARV).zip"; mv mar-tools/certutil.exe mar-tools/nss-certutil.exe; cd ..; mkdir mar-tools-32; cd mar-tools-32; mv $(MARFILES_T32) .; cd ..; rm -rf tmp32;)
+
+$(ARTIFACTS)/mar-tools-64/nss-certutil.exe: $(ARTIFACTS)/mar-tools-win64-$(MARV).zip
+	(cd "$(ARTIFACTS)"; mkdir tmp64; cd tmp64; unzip "../mar-tools-win64-$(MARV).zip"; mv mar-tools/certutil.exe mar-tools/nss-certutil.exe; cd ..; mkdir mar-tools-64; cd mar-tools-64; mv $(MARFILES_T64) .; cd ..; rm -rf tmp64;)
+
+.NOTPARALLEL: $(MARFILES_A32)
+.NOTPARALLEL: $(MARFILES_A64)
+
 ### INSTALLER
 ##############################################################################
-$(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(EXES_A) $(KGFILES_A) $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe
+$(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(EXES_A) $(KGFILES_A) $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe $(MARFILES_A$(MARARCH))
 	@mkdir -p "$(BUILD)/bin"
 	$(MAKENSIS) $(NSISFLAGS) -DPOSIX_BUILD=1 -DNCDNS_PRODVER=$(NCDNS_PRODVER_W) \
 		$(_NCDNS_64BIT) $(_NO_NAMECOIN_CORE) $(_NO_DNSSEC_TRIGGER) \
