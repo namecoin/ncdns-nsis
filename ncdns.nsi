@@ -114,8 +114,10 @@ Var /GLOBAL BitcoinJRequirementsMet
 Var /GLOBAL BitcoinJRequirementsError
 Var /GLOBAL FirefoxDetected
 Var /GLOBAL FirefoxCurrentVersion
+Var /GLOBAL FirefoxInstallDirectoryRegistryKey
 Var /GLOBAL FirefoxInstallDirectoryBackSlashes
 Var /GLOBAL FirefoxInstallDirectoryForwardSlashes
+Var /GLOBAL FirefoxProfileINI
 Var /GLOBAL FirefoxProfileNumber
 Var /GLOBAL FirefoxIsDefaultProfile
 Var /GLOBAL FirefoxIsRelativeProfile
@@ -125,6 +127,7 @@ Var /GLOBAL FirefoxProfileDirectoryBackSlashes
 Var /GLOBAL FirefoxProfileDirectoryForwardSlashes
 Var /GLOBAL FirefoxTempDBDirectoryBackSlashes
 Var /GLOBAL FirefoxTempDBDirectoryForwardSlashes
+Var /GLOBAL FirefoxError
 Var /GLOBAL FirefoxRejected
 
 # PRELAUNCH CHECKS
@@ -421,30 +424,32 @@ Function DetectFirefox
   # Check Firefox version
   ClearErrors
   ReadRegStr $FirefoxCurrentVersion HKLM "SOFTWARE\Mozilla\Mozilla Firefox" "CurrentVersion"
-  IfErrors absent 0
+  IfErrors versionerror 0
 
   # Check Firefox install directory
-  ReadRegStr $FirefoxInstallDirectoryBackSlashes HKLM "SOFTWARE\Mozilla\Mozilla Firefox\$FirefoxCurrentVersion\Main" "Install Directory"
+  StrCpy $FirefoxInstallDirectoryRegistryKey "SOFTWARE\Mozilla\Mozilla Firefox\$FirefoxCurrentVersion\Main"
+  ReadRegStr $FirefoxInstallDirectoryBackSlashes HKLM "$FirefoxInstallDirectoryRegistryKey" "Install Directory"
   ${StrRep} $FirefoxInstallDirectoryForwardSlashes "$FirefoxInstallDirectoryBackSlashes" "\" "/"
-  IfErrors absent 0
+  IfErrors installdirectoryerror 0
 
   # Try Profile 0
   Push 0
   Pop $FirefoxProfileNumber
 
   # Get the info for Profile
-  ReadINIStr $FirefoxIsDefaultProfile "$APPDATA\Mozilla\Firefox\profiles.ini" "Profile$FirefoxProfileNumber" "Default"
-  ReadINIStr $FirefoxIsRelativeProfile "$APPDATA\Mozilla\Firefox\profiles.ini" "Profile$FirefoxProfileNumber" "IsRelative"
-  ReadINIStr $FirefoxRawProfileDirectoryForwardSlashes "$APPDATA\Mozilla\Firefox\profiles.ini" "Profile$FirefoxProfileNumber" "Path"
-  IfErrors absent 0
+  StrCpy $FirefoxProfileINI "$APPDATA\Mozilla\Firefox\profiles.ini"
+  ReadINIStr $FirefoxIsDefaultProfile "$FirefoxProfileINI" "Profile$FirefoxProfileNumber" "Default"
+  ReadINIStr $FirefoxIsRelativeProfile "$FirefoxProfileINI" "Profile$FirefoxProfileNumber" "IsRelative"
+  ReadINIStr $FirefoxRawProfileDirectoryForwardSlashes "$FirefoxProfileINI" "Profile$FirefoxProfileNumber" "Path"
+  IfErrors profileinierror 0
 
   # Fail if Profile 0 isn't the default or isn't relative.
   # In the future maybe we'll support those edge cases.
   ${If} "$FirefoxIsDefaultProfile" != "1"
-    Goto absent
+    Goto profiledefaulterror
   ${EndIf}
   ${If} "$FirefoxIsRelativeProfile" != "1"
-    Goto absent
+    Goto profilerelativeerror
   ${EndIf}
 
   # Get the profile directory
@@ -453,14 +458,47 @@ Function DetectFirefox
   ${StrRep} $FirefoxProfileDirectoryForwardSlashes "$FirefoxProfileDirectoryBackSlashes" "\" "/"
 
   # Make sure the profile directory has an NSS sqlite database in it
-  IfFileExists "$FirefoxProfileDirectoryBackSlashes\cert9.db" 0 absent
-  IfFileExists "$FirefoxProfileDirectoryBackSlashes\key4.db" 0 absent
-  IfFileExists "$FirefoxProfileDirectoryBackSlashes\pkcs11.txt" 0 absent
+  IfFileExists "$FirefoxProfileDirectoryBackSlashes\cert9.db" 0 cert9error
+  IfFileExists "$FirefoxProfileDirectoryBackSlashes\key4.db" 0 key4error
+  IfFileExists "$FirefoxProfileDirectoryBackSlashes\pkcs11.txt" 0 pkcs11error
 
   Push 1
   Pop $FirefoxDetected
 
   Return
+
+versionerror:
+  StrCpy $FirefoxError "Couldn't detect Firefox version"
+  Goto absent
+
+installdirectoryerror:
+  StrCpy $FirefoxError "Couldn't detect Firefox install directory from registry key $FirefoxInstallDirectoryRegistryKey"
+  Goto absent
+
+profileinierror:
+  StrCpy $FirefoxError "Couldn't read Firefox profile INI from $FirefoxProfileINI"
+  Goto absent
+
+profiledefaulterror:
+  StrCpy $FirefoxError "Firefox profile 0 is not default: Default=$FirefoxIsDefaultProfile"
+  Goto absent
+
+profilerelativeerror:
+  StrCpy $FirefoxError "Firefox profile 0 is not relative: IsRelative=$FirefoxIsRelativeProfile"
+  Goto absent
+
+cert9error:
+  StrCpy $FirefoxError "cert9.db is missing from Firefox profile in $FirefoxProfileDirectoryBackSlashes"
+  Goto absent
+
+key4error:
+  StrCpy $FirefoxError "key4.db is missing from Firefox profile in $FirefoxProfileDirectoryBackSlashes"
+  Goto absent
+
+pkcs11error:
+  StrCpy $FirefoxError "pkcs11.txt is missing from Firefox profile in $FirefoxProfileDirectoryBackSlashes"
+  Goto absent
+
 absent:
   Push 0
   Pop $FirefoxDetected
@@ -616,6 +654,12 @@ Function LogRequirementsChecks
     DetailPrint "BitcoinJ can be installed."
   ${Else}
     DetailPrint "$BitcoinJRequirementsError before BitcoinJ can be installed."
+  ${EndIf}
+
+  ${If} $FirefoxDetected == 1
+    DetailPrint "Firefox was detected."
+  ${Else}
+    DetailPrint "Firefox was not detected: $FirefoxError"
   ${EndIf}
 FunctionEnd
 
