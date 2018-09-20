@@ -1274,6 +1274,11 @@ Function TLSFirefoxConfig
     Return
   ${EndIf}
 
+  ${If} $UseSPV == ${BST_CHECKED}
+    DetailPrint "*** Skipping Firefox config because Firefox is not compatible with ConsensusJ-Namecoin yet"
+    Return
+  ${EndIf}
+
   # Prompt user.
   MessageBox MB_ICONQUESTION|MB_YESNO "You currently have Mozilla Firefox installed.  ncdns can enable HTTPS for Namecoin websites in Firefox.  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Firefox's profile folder.  ncdns will use this permission to add certificate overrides for legitimate self-signed Namecoin TLS certificates, and to apply name constraints that prevent public certificate authorities from issuing Namecoin TLS certificates.  ncdns will not intentionally do anything else with this permission, but if an attacker were able to exploit ncdns, they might be able to compromise your Firefox installation.$\n$\nWould you like to enable HTTPS for Namecoin websites in Firefox?" /SD IDNO IDYES chose_yes IDNO chose_no
 
