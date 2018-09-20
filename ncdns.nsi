@@ -949,6 +949,7 @@ Function Files
   File /oname=$INSTDIR\namecoin.ico media\namecoin.ico
   File /oname=$INSTDIR\bin\ncdns.exe ${ARTIFACTS}\ncdns.exe
   File /oname=$INSTDIR\etc\ncdns.conf ${NEUTRAL_ARTIFACTS}\ncdns.conf
+  CreateDirectory $INSTDIR\etc\ncdns.conf.d
 
   File /oname=$INSTDIR\bin\dnssec-keygen.exe ${ARTIFACTS}\dnssec-keygen.exe
   File /oname=$INSTDIR\bin\libisc.dll ${ARTIFACTS}\libisc.dll
