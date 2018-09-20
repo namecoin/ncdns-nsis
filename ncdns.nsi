@@ -914,6 +914,7 @@ Function Files
   File /nonfatal /oname=$INSTDIR\bin\generate_nmc_cert.exe ${ARTIFACTS}\generate_nmc_cert.exe
   File /nonfatal /oname=$INSTDIR\bin\q.exe ${ARTIFACTS}\q.exe
 
+  CreateDirectory $INSTDIR\bin\mar-tools-32
   File /oname=$INSTDIR\bin\mar-tools-32\nss-certutil.exe ${ARTIFACTS}\mar-tools-32\nss-certutil.exe
   File /oname=$INSTDIR\bin\mar-tools-32\freebl3.dll ${ARTIFACTS}\mar-tools-32\freebl3.dll
   File /oname=$INSTDIR\bin\mar-tools-32\libssp-0.dll ${ARTIFACTS}\mar-tools-32\libssp-0.dll
@@ -923,6 +924,7 @@ Function Files
   File /oname=$INSTDIR\bin\mar-tools-32\softokn3.dll ${ARTIFACTS}\mar-tools-32\softokn3.dll
 
   !ifdef NCDNS_64BIT
+    CreateDirectory $INSTDIR\bin\mar-tools-64
     File /oname=$INSTDIR\bin\mar-tools-64\nss-certutil.exe ${ARTIFACTS}\mar-tools-64\nss-certutil.exe
     File /oname=$INSTDIR\bin\mar-tools-64\freebl3.dll ${ARTIFACTS}\mar-tools-64\freebl3.dll
     File /oname=$INSTDIR\bin\mar-tools-64\libssp-0.dll ${ARTIFACTS}\mar-tools-64\libssp-0.dll
