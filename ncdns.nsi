@@ -432,6 +432,9 @@ Function DetectFirefox
   ${StrRep} $FirefoxInstallDirectoryForwardSlashes "$FirefoxInstallDirectoryBackSlashes" "\" "/"
   IfErrors installdirectoryerror 0
 
+  # We need the current user's $APPDATA for accessing the Firefox profile.
+  SetShellVarContext current
+
   # Try Profile 0
   Push 0
   Pop $FirefoxProfileNumber
@@ -465,7 +468,7 @@ Function DetectFirefox
   Push 1
   Pop $FirefoxDetected
 
-  Return
+  Goto restoreappdata
 
 versionerror:
   StrCpy $FirefoxError "Couldn't detect Firefox version"
@@ -502,6 +505,11 @@ pkcs11error:
 absent:
   Push 0
   Pop $FirefoxDetected
+
+restoreappdata:
+  # Restore SetShellVarContext
+  SetShellVarContext all
+
 FunctionEnd
 
 # DIALOG HELPERS
