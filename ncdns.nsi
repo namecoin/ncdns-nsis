@@ -125,6 +125,7 @@ Var /GLOBAL FirefoxProfileDirectoryBackSlashes
 Var /GLOBAL FirefoxProfileDirectoryForwardSlashes
 Var /GLOBAL FirefoxTempDBDirectoryBackSlashes
 Var /GLOBAL FirefoxTempDBDirectoryForwardSlashes
+Var /GLOBAL FirefoxRejected
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -1267,22 +1268,43 @@ FunctionEnd
 # CONFIGURATION FOR FIREFOX TLS
 ##############################################################################
 Function TLSFirefoxConfig
-  # Calculate temporary DB directory
-  StrCpy $FirefoxTempDBDirectoryBackSlashes "$INSTDIR\etc\nss-temp-db"
-  ${StrRep} $FirefoxTempDBDirectoryForwardSlashes "$FirefoxTempDBDirectoryBackSlashes" "\" "/"
+  # No-op if Firefox not detected.
+  ${If} $FirefoxDetected == 0
+    DetailPrint "*** Skipping Firefox config because Firefox was not detected"
+    Return
+  ${EndIf}
 
-  # Create temporary DB directory and permit ncdns to write to it
+  # Prompt user.
+  MessageBox MB_ICONQUESTION|MB_YESNO "You currently have Mozilla Firefox installed.  ncdns can enable HTTPS for Namecoin websites in Firefox.  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Firefox's profile folder.  ncdns will use this permission to add certificate overrides for legitimate self-signed Namecoin TLS certificates, and to apply name constraints that prevent public certificate authorities from issuing Namecoin TLS certificates.  ncdns will not intentionally do anything else with this permission, but if an attacker were able to exploit ncdns, they might be able to compromise your Firefox installation.$\n$\nWould you like to enable HTTPS for Namecoin websites in Firefox?" /SD IDNO IDYES chose_yes IDNO chose_no
+
+chose_no:
+  DetailPrint "*** Skipping Firefox config because user elected not to configure Firefox"
+  StrCpy $FirefoxRejected 1
+  Return
+
+chose_yes:
+  DetailPrint "*** User elected to configure Firefox"
+  StrCpy $FirefoxRejected 0
+
+  DetailPrint "*** Firefox: Calculating temporary DB directory..."
+  StrCpy $FirefoxTempDBDirectoryBackSlashes "$INSTDIR\etc\nss-temp-db"
+  DetailPrint "*** Firefox: Temporary DB directory (backslash format) is $FirefoxTempDBDirectoryBackSlashes"
+  ${StrRep} $FirefoxTempDBDirectoryForwardSlashes "$FirefoxTempDBDirectoryBackSlashes" "\" "/"
+  DetailPrint "*** Firefox: Temporary DB directory (forward-slash format) is $FirefoxTempDBDirectoryForwardSlashes"
+
+  DetailPrint "*** Firefox: Creating temporary DB directory $FirefoxTempDBDirectoryBackSlashes"
   CreateDirectory "$FirefoxTempDBDirectoryBackSlashes"
+  DetailPrint "*** Firefox: Granting ncdns full control of temporary DB directory $FirefoxTempDBDirectoryBackSlashes"
   nsExec::ExecToLog 'icacls "$FirefoxTempDBDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)F"'
 
-  # Permit ncdns to write to Firefox profile directory
+  DetailPrint "*** Firefox: Granting ncdns full control of Firefox profile directory $FirefoxProfileDirectoryBackSlashes"
   # TODO: can we restrict this to only cert_override.txt and the NSS DB files?
   nsExec::ExecToLog 'icacls "$FirefoxProfileDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)F"'
 
-  # Permit ncdns to read CKBI from Firefox install directory
+  DetailPrint "*** Firefox: Granting ncdns read permission for CKBI in Firefox install directory $FirefoxInstallDirectoryBackSlashes"
   nsExec::ExecToLog 'icacls "$FirefoxInstallDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R"'
 
-  # Permit ncdns to read the Firefox version from the registry
+  DetailPrint "*** Firefox: Granting ncdns read permission for Firefox version in Windows registry"
   File /oname=$PLUGINSDIR\regpermfirefoxversion.ps1 regpermfirefoxversion.ps1
   FileOpen $4 "$PLUGINSDIR\regpermfirefoxversion.cmd" w
   FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\regpermfirefoxversion.ps1" install < nul'
@@ -1292,6 +1314,7 @@ Function TLSFirefoxConfig
   Delete $PLUGINSDIR\regpermfirefoxversion.ps1
 
   # Write the ncdns config for TLS/Negative/Firefox
+  DetailPrint "*** Firefox: Creating tls-negative-firefox.conf"
   File /oname=$INSTDIR\etc\ncdns.conf.d\tls-negative-firefox.conf ${NEUTRAL_ARTIFACTS}\tls-negative-firefox.conf
   FileOpen $4 "$INSTDIR\etc\ncdns.conf.d\tls-negative-firefox.conf" a
   FileSeek $4 0 END
@@ -1301,11 +1324,14 @@ Function TLSFirefoxConfig
   FileClose $4
 
   # Write the ncdns config for TLS/Positive/Firefox
+  DetailPrint "*** Firefox: Creating tls-positive-firefox.conf"
   File /oname=$INSTDIR\etc\ncdns.conf.d\tls-positive-firefox.conf ${NEUTRAL_ARTIFACTS}\tls-positive-firefox.conf
   FileOpen $4 "$INSTDIR\etc\ncdns.conf.d\tls-positive-firefox.conf" a
   FileSeek $4 0 END
   FileWrite $4 'profiledir="$FirefoxProfileDirectoryForwardSlashes"$\r$\n'
   FileClose $4
+
+  DetailPrint "*** Firefox: Finished configuration"
 FunctionEnd
 
 #
