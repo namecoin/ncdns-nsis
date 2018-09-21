@@ -990,6 +990,7 @@ Function FilesSecure
   # Ensure only ncdns service and administrators can read ncdns.conf.
   Call FilesSecurePre
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf.d" /reset /T'
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk" /reset'
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.private" /reset'
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.key" /reset'
