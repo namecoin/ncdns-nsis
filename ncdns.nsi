@@ -1079,6 +1079,8 @@ Function un.Files
   !endif
 
   Delete $INSTDIR\etc\ncdns.conf
+  Delete $INSTDIR\etc\ncdns.conf.d\tls-negative-firefox.conf
+  Delete $INSTDIR\etc\ncdns.conf.d\tls-positive-firefox.conf
   Delete $INSTDIR\etc\ksk\bit.private
   Delete $INSTDIR\bit.key
   Delete $INSTDIR\etc\zsk\bit.private
@@ -1086,6 +1088,8 @@ Function un.Files
   RMDir $INSTDIR\bin
   RMDir $INSTDIR\etc\ksk
   RMDir $INSTDIR\etc\zsk
+  RMDir $INSTDIR\etc\ncdns.conf.d
+  RMDir $INSTDIR\etc\nss-temp-db
   RMDir $INSTDIR\etc
   Delete $INSTDIR\namecoin.ico
   Delete $INSTDIR\uninst.exe
