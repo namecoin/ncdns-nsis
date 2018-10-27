@@ -112,11 +112,27 @@ Var /GLOBAL BindRequirementsURL
 Var /GLOBAL BindRequirementsError
 Var /GLOBAL BitcoinJRequirementsMet
 Var /GLOBAL BitcoinJRequirementsError
+Var /GLOBAL FirefoxDetected
+Var /GLOBAL FirefoxCurrentVersion
+Var /GLOBAL FirefoxInstallDirectoryBackSlashes
+Var /GLOBAL FirefoxInstallDirectoryForwardSlashes
+Var /GLOBAL FirefoxProfileNumber
+Var /GLOBAL FirefoxIsDefaultProfile
+Var /GLOBAL FirefoxIsRelativeProfile
+Var /GLOBAL FirefoxRawProfileDirectoryBackSlashes
+Var /GLOBAL FirefoxRawProfileDirectoryForwardSlashes
+Var /GLOBAL FirefoxProfileDirectoryBackSlashes
+Var /GLOBAL FirefoxProfileDirectoryForwardSlashes
+Var /GLOBAL FirefoxTempDBDirectoryBackSlashes
+Var /GLOBAL FirefoxTempDBDirectoryForwardSlashes
 
 # PRELAUNCH CHECKS
 ##############################################################################
 !Include WinVer.nsh
 !include x64.nsh
+
+!include "StrFunc.nsh"
+${StrRep}
 
 Function .onInit
   ${IfNot} ${AtLeastWinVista}
@@ -144,6 +160,7 @@ Function .onInit
   Call DetectVC2015_x86_64
   Call DetectBindRequirements
   Call DetectBitcoinJRequirements
+  Call DetectFirefox
 
   Call FailIfBindRequirementsNotMet
 FunctionEnd
@@ -399,6 +416,55 @@ Function DetectBitcoinJRequirements
   Pop $BitcoinJRequirementsMet
 FunctionEnd
 
+Function DetectFirefox
+  # Check Firefox version
+  ClearErrors
+  ReadRegStr $FirefoxCurrentVersion HKLM "SOFTWARE\Mozilla\Mozilla Firefox" "CurrentVersion"
+  IfErrors absent 0
+
+  # Check Firefox install directory
+  ReadRegStr $FirefoxInstallDirectoryBackSlashes HKLM "SOFTWARE\Mozilla\Mozilla Firefox\$FirefoxCurrentVersion\Main" "Install Directory"
+  ${StrRep} $FirefoxInstallDirectoryForwardSlashes "$FirefoxInstallDirectoryBackSlashes" "\" "/"
+  IfErrors absent 0
+
+  # Try Profile 0
+  Push 0
+  Pop $FirefoxProfileNumber
+
+  # Get the info for Profile
+  ReadINIStr $FirefoxIsDefaultProfile "$APPDATA\Mozilla\Firefox\profiles.ini" "Profile$FirefoxProfileNumber" "Default"
+  ReadINIStr $FirefoxIsRelativeProfile "$APPDATA\Mozilla\Firefox\profiles.ini" "Profile$FirefoxProfileNumber" "IsRelative"
+  ReadINIStr $FirefoxRawProfileDirectoryForwardSlashes "$APPDATA\Mozilla\Firefox\profiles.ini" "Profile$FirefoxProfileNumber" "Path"
+  IfErrors absent 0
+
+  # Fail if Profile 0 isn't the default or isn't relative.
+  # In the future maybe we'll support those edge cases.
+  ${If} "$FirefoxIsDefaultProfile" != "1"
+    Goto absent
+  ${EndIf}
+  ${If} "$FirefoxIsRelativeProfile" != "1"
+    Goto absent
+  ${EndIf}
+
+  # Get the profile directory
+  ${StrRep} $FirefoxRawProfileDirectoryBackSlashes "$FirefoxRawProfileDirectoryForwardSlashes" "/" "\"
+  StrCpy $FirefoxProfileDirectoryBackSlashes "$APPDATA\Mozilla\Firefox\$FirefoxRawProfileDirectoryBackSlashes"
+  ${StrRep} $FirefoxProfileDirectoryForwardSlashes "$FirefoxProfileDirectoryBackSlashes" "\" "/"
+
+  # Make sure the profile directory has an NSS sqlite database in it
+  IfFileExists "$FirefoxProfileDirectoryBackSlashes\cert9.db" 0 absent
+  IfFileExists "$FirefoxProfileDirectoryBackSlashes\key4.db" 0 absent
+  IfFileExists "$FirefoxProfileDirectoryBackSlashes\pkcs11.txt" 0 absent
+
+  Push 1
+  Pop $FirefoxDetected
+
+  Return
+absent:
+  Push 0
+  Pop $FirefoxDetected
+FunctionEnd
+
 # DIALOG HELPERS
 ##############################################################################
 Function ShowCallback
@@ -471,6 +537,7 @@ Section "ncdns" Sec_ncdns
   Call BitcoinJ
   Call TrustConfig
   Call FilesSecurePre
+  Call TLSFirefoxConfig
   Call KeyConfig
   Call FilesSecure
   Call ServiceStart
@@ -1197,6 +1264,49 @@ Function un.TrustInjectionConfig
   Delete $PLUGINSDIR\regperm.ps1
 FunctionEnd
 
+# CONFIGURATION FOR FIREFOX TLS
+##############################################################################
+Function TLSFirefoxConfig
+  # Calculate temporary DB directory
+  StrCpy $FirefoxTempDBDirectoryBackSlashes "$INSTDIR\etc\nss-temp-db"
+  ${StrRep} $FirefoxTempDBDirectoryForwardSlashes "$FirefoxTempDBDirectoryBackSlashes" "\" "/"
+
+  # Create temporary DB directory and permit ncdns to write to it
+  CreateDirectory "$FirefoxTempDBDirectoryBackSlashes"
+  nsExec::ExecToLog 'icacls "$FirefoxTempDBDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)F"'
+
+  # Permit ncdns to write to Firefox profile directory
+  # TODO: can we restrict this to only cert_override.txt and the NSS DB files?
+  nsExec::ExecToLog 'icacls "$FirefoxProfileDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)F"'
+
+  # Permit ncdns to read CKBI from Firefox install directory
+  nsExec::ExecToLog 'icacls "$FirefoxInstallDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R"'
+
+  # Permit ncdns to read the Firefox version from the registry
+  File /oname=$PLUGINSDIR\regpermfirefoxversion.ps1 regpermfirefoxversion.ps1
+  FileOpen $4 "$PLUGINSDIR\regpermfirefoxversion.cmd" w
+  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\regpermfirefoxversion.ps1" install < nul'
+  FileClose $4
+  nsExec::ExecToLog '"$PLUGINSDIR\regpermfirefoxversion.cmd"'
+  Delete $PLUGINSDIR\regpermfirefoxversion.cmd
+  Delete $PLUGINSDIR\regpermfirefoxversion.ps1
+
+  # Write the ncdns config for TLS/Negative/Firefox
+  File /oname=$INSTDIR\etc\ncdns.conf.d\tls-negative-firefox.conf ${NEUTRAL_ARTIFACTS}\tls-negative-firefox.conf
+  FileOpen $4 "$INSTDIR\etc\ncdns.conf.d\tls-negative-firefox.conf" a
+  FileSeek $4 0 END
+  FileWrite $4 'nss-ckbi-dir="$FirefoxInstallDirectoryForwardSlashes"$\r$\n'
+  FileWrite $4 'nss-temp-db-dir="$FirefoxTempDBDirectoryForwardSlashes"$\r$\n'
+  FileWrite $4 'nss-dest-db-dir="$FirefoxProfileDirectoryForwardSlashes"$\r$\n'
+  FileClose $4
+
+  # Write the ncdns config for TLS/Positive/Firefox
+  File /oname=$INSTDIR\etc\ncdns.conf.d\tls-positive-firefox.conf ${NEUTRAL_ARTIFACTS}\tls-positive-firefox.conf
+  FileOpen $4 "$INSTDIR\etc\ncdns.conf.d\tls-positive-firefox.conf" a
+  FileSeek $4 0 END
+  FileWrite $4 'profiledir="$FirefoxProfileDirectoryForwardSlashes"$\r$\n'
+  FileClose $4
+FunctionEnd
 
 #
 ##############################################################################
