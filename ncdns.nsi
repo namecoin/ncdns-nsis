@@ -103,6 +103,13 @@ Var /GLOBAL JRE32Detected
 Var /GLOBAL JRE64Detected
 Var /GLOBAL VC2010_x86_32Detected
 Var /GLOBAL VC2010_x86_64Detected
+Var /GLOBAL VC2012_x86_32Detected
+Var /GLOBAL VC2012_x86_64Detected
+Var /GLOBAL VC2015_x86_32Detected
+Var /GLOBAL VC2015_x86_64Detected
+Var /GLOBAL BindRequirementsMet
+Var /GLOBAL BindRequirementsURL
+Var /GLOBAL BindRequirementsError
 Var /GLOBAL BitcoinJRequirementsMet
 Var /GLOBAL BitcoinJRequirementsError
 
@@ -126,13 +133,19 @@ Function .onInit
   Call CheckReinstall
 
   # Detect already installed dependencies.
-  Call DetectVC8 # aborts on failure
   Call DetectNamecoinCore
   Call DetectUnbound
   Call DetectJRE
   Call DetectVC2010_x86_32
   Call DetectVC2010_x86_64
+  Call DetectVC2012_x86_32
+  Call DetectVC2012_x86_64
+  Call DetectVC2015_x86_32
+  Call DetectVC2015_x86_64
+  Call DetectBindRequirements
   Call DetectBitcoinJRequirements
+
+  Call FailIfBindRequirementsNotMet
 FunctionEnd
 
 Function un.onInit
@@ -148,21 +161,6 @@ Function CheckReinstall
   Abort
 
 not_installed:
-FunctionEnd
-Function DetectVC8
-  # Check that MSVC8 runtime is installed for dnssec-keygen.
-  FindFirst $0 $1 $WINDIR\WinSxS\x86_microsoft.vc80.crt_1fc8b3b9a1e18e3b_8.*
-  StrCmp $1 "" notfound
-  Goto found
-
-notfound:
-  FindClose $0
-  MessageBox "MB_OK|MB_ICONSTOP" "ncdns for Windows requires the Microsoft Visual C 8.0 runtime.$\n$\nYou can download it from:$\nhttps://www.microsoft.com/en-us/download/details.aspx?id=5638"
-  ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=5638"
-  Abort
-
-found:
-  FindClose $0
 FunctionEnd
 
 Function DetectVC2010_x86_32
@@ -188,6 +186,58 @@ Function DetectVC2010_x86_64
   ${Else}
     Push 1
     Pop $VC2010_x86_64Detected
+  ${EndIf}
+FunctionEnd
+
+Function DetectVC2012_x86_32
+  # https://blogs.msdn.microsoft.com/astebner/2010/05/05/mailbag-how-to-detect-the-presence-of-the-visual-c-2010-redistributable-package/
+  # https://stackoverflow.com/a/34199260
+  ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+  ${If} $0 != "1"
+    Push 0
+    Pop $VC2012_x86_32Detected
+  ${Else}
+    Push 1
+    Pop $VC2012_x86_32Detected
+  ${EndIf}
+FunctionEnd
+
+Function DetectVC2012_x86_64
+  # https://blogs.msdn.microsoft.com/astebner/2010/05/05/mailbag-how-to-detect-the-presence-of-the-visual-c-2010-redistributable-package/
+  # https://stackoverflow.com/a/34199260
+  ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\11.0\VC\Runtimes\x64" "Installed"
+  ${If} $0 != "1"
+    Push 0
+    Pop $VC2012_x86_64Detected
+  ${Else}
+    Push 1
+    Pop $VC2012_x86_64Detected
+  ${EndIf}
+FunctionEnd
+
+Function DetectVC2015_x86_32
+  # https://blogs.msdn.microsoft.com/astebner/2010/05/05/mailbag-how-to-detect-the-presence-of-the-visual-c-2010-redistributable-package/
+  # https://stackoverflow.com/a/34199260
+  ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86" "Installed"
+  ${If} $0 != "1"
+    Push 0
+    Pop $VC2015_x86_32Detected
+  ${Else}
+    Push 1
+    Pop $VC2015_x86_32Detected
+  ${EndIf}
+FunctionEnd
+
+Function DetectVC2015_x86_64
+  # https://blogs.msdn.microsoft.com/astebner/2010/05/05/mailbag-how-to-detect-the-presence-of-the-visual-c-2010-redistributable-package/
+  # https://stackoverflow.com/a/34199260
+  ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
+  ${If} $0 != "1"
+    Push 0
+    Pop $VC2015_x86_64Detected
+  ${Else}
+    Push 1
+    Pop $VC2015_x86_64Detected
   ${EndIf}
 FunctionEnd
 
@@ -269,6 +319,55 @@ Function DetectJREUnder
 
 not_found:
   Return
+FunctionEnd
+
+Function DetectBindRequirements
+  # BIND's binaries link against *both* the Visual C++ 2012 and 2015
+  # Redistributables.  Don't ask me why, I don't know.
+
+  ${If} ${RunningX64}
+    ${If} $VC2012_x86_64Detected == 0
+      Push 0
+      Pop $BindRequirementsMet
+      StrCpy $BindRequirementsURL "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+      StrCpy $BindRequirementsError "ncdns for Windows requires the Microsoft Visual C++ 2012 (64-bit) Redistributable.$\n$\nYou can download it from:$\n$BindRequirementsURL"
+      Return
+    ${EndIf}
+    ${If} $VC2015_x86_64Detected == 0
+      Push 0
+      Pop $BindRequirementsMet
+      StrCpy $BindRequirementsURL "https://www.microsoft.com/en-us/download/details.aspx?id=53587"
+      StrCpy $BindRequirementsError "ncdns for Windows requires the Microsoft Visual C++ 2015 (64-bit) Redistributable.$\n$\nYou can download it from:$\n$BindRequirementsURL"
+      Return
+    ${EndIf}
+  ${Else}
+    ${If} $VC2012_x86_32Detected == 0
+      Push 0
+      Pop $BindRequirementsMet
+      StrCpy $BindRequirementsURL "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+      StrCpy $BindRequirementsError "ncdns for Windows requires the Microsoft Visual C++ 2012 (32-bit) Redistributable.$\n$\nYou can download it from:$\n$BindRequirementsURL"
+      Return
+    ${EndIf}
+    ${If} $VC2015_x86_32Detected == 0
+      Push 0
+      Pop $BindRequirementsMet
+      StrCpy $BindRequirementsURL "https://www.microsoft.com/en-us/download/details.aspx?id=53587"
+      StrCpy $BindRequirementsError "ncdns for Windows requires the Microsoft Visual C++ 2015 (32-bit) Redistributable.$\n$\nYou can download it from:$\n$BindRequirementsURL"
+      Return
+    ${EndIf}
+  ${EndIf}
+
+  Push 1
+  Pop $BindRequirementsMet
+  StrCpy $BindRequirementsError ""
+FunctionEnd
+
+Function FailIfBindRequirementsNotMet
+  ${If} $BindRequirementsMet == 0
+    MessageBox "MB_OK|MB_ICONSTOP" "$BindRequirementsError"
+    ExecShell "open" "$BindRequirementsURL"
+    Abort
+  ${EndIf}
 FunctionEnd
 
 Function DetectBitcoinJRequirements
@@ -419,6 +518,30 @@ Function LogRequirementsChecks
     DetailPrint "Microsoft Visual C++ 2010 Redistributable Package 64-bit was detected."
   ${Else}
     DetailPrint "Microsoft Visual C++ 2010 Redistributable Package 64-bit was NOT detected."
+  ${EndIf}
+
+  ${If} $VC2012_x86_32Detected == 1
+    DetailPrint "Microsoft Visual C++ 2012 Redistributable Package 32-bit was detected."
+  ${Else}
+    DetailPrint "Microsoft Visual C++ 2012 Redistributable Package 32-bit was NOT detected."
+  ${EndIf}
+
+  ${If} $VC2012_x86_64Detected == 1
+    DetailPrint "Microsoft Visual C++ 2012 Redistributable Package 64-bit was detected."
+  ${Else}
+    DetailPrint "Microsoft Visual C++ 2012 Redistributable Package 64-bit was NOT detected."
+  ${EndIf}
+
+  ${If} $VC2015_x86_32Detected == 1
+    DetailPrint "Microsoft Visual C++ 2015 Redistributable Package 32-bit was detected."
+  ${Else}
+    DetailPrint "Microsoft Visual C++ 2015 Redistributable Package 32-bit was NOT detected."
+  ${EndIf}
+
+  ${If} $VC2015_x86_64Detected == 1
+    DetailPrint "Microsoft Visual C++ 2015 Redistributable Package 64-bit was detected."
+  ${Else}
+    DetailPrint "Microsoft Visual C++ 2015 Redistributable Package 64-bit was NOT detected."
   ${EndIf}
 
   ${If} $BitcoinJRequirementsMet == 1
