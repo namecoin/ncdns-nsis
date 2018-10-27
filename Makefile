@@ -116,23 +116,23 @@ $(ARTIFACTS)/q.exe:
 
 ### MAR-TOOLS
 ##############################################################################
-MARV=2018-09-08
-$(ARTIFACTS)/mar-tools-win32-$(MARV).zip:
-	wget -O "$@" "https://namecoin.org/files/mar-tools/mar-tools-$(MARV)/mar-tools-win32-$(MARV).zip"
-$(ARTIFACTS)/mar-tools-win64-$(MARV).zip:
-	wget -O "$@" "https://namecoin.org/files/mar-tools/mar-tools-$(MARV)/mar-tools-win64-$(MARV).zip"
+MARV=8.5a4
+$(ARTIFACTS)/mar-tools-win32.zip:
+	wget -O "$@" "https://dist.torproject.org/torbrowser/$(MARV)/mar-tools-win32.zip"
+$(ARTIFACTS)/mar-tools-win64.zip:
+	wget -O "$@" "https://dist.torproject.org/torbrowser/$(MARV)/mar-tools-win64.zip"
 
-MARFILES=nss-certutil.exe freebl3.dll libssp-0.dll mozglue.dll nss3.dll nssdbm3.dll softokn3.dll
+MARFILES=nss-certutil.exe freebl3.dll mozglue.dll nss3.dll nssdbm3.dll softokn3.dll
 MARFILES_T32=$(foreach k,$(MARFILES),../tmp32/mar-tools/$(k))
 MARFILES_A32=$(foreach k,$(MARFILES),$(ARTIFACTS)/mar-tools-32/$(k))
 MARFILES_T64=$(foreach k,$(MARFILES),../tmp64/mar-tools/$(k))
 MARFILES_A64=$(MARFILES_A32) $(foreach k,$(MARFILES),$(ARTIFACTS)/mar-tools-64/$(k))
 
-$(ARTIFACTS)/mar-tools-32/nss-certutil.exe: $(ARTIFACTS)/mar-tools-win32-$(MARV).zip
-	(cd "$(ARTIFACTS)"; mkdir tmp32; cd tmp32; unzip "../mar-tools-win32-$(MARV).zip"; mv mar-tools/certutil.exe mar-tools/nss-certutil.exe; cd ..; mkdir mar-tools-32; cd mar-tools-32; mv $(MARFILES_T32) .; cd ..; rm -rf tmp32;)
+$(ARTIFACTS)/mar-tools-32/nss-certutil.exe: $(ARTIFACTS)/mar-tools-win32.zip
+	(cd "$(ARTIFACTS)"; mkdir tmp32; cd tmp32; unzip "../mar-tools-win32.zip"; mv mar-tools/certutil.exe mar-tools/nss-certutil.exe; cd ..; mkdir mar-tools-32; cd mar-tools-32; mv $(MARFILES_T32) .; cd ..; rm -rf tmp32;)
 
-$(ARTIFACTS)/mar-tools-64/nss-certutil.exe: $(ARTIFACTS)/mar-tools-win64-$(MARV).zip
-	(cd "$(ARTIFACTS)"; mkdir tmp64; cd tmp64; unzip "../mar-tools-win64-$(MARV).zip"; mv mar-tools/certutil.exe mar-tools/nss-certutil.exe; cd ..; mkdir mar-tools-64; cd mar-tools-64; mv $(MARFILES_T64) .; cd ..; rm -rf tmp64;)
+$(ARTIFACTS)/mar-tools-64/nss-certutil.exe: $(ARTIFACTS)/mar-tools-win64.zip
+	(cd "$(ARTIFACTS)"; mkdir tmp64; cd tmp64; unzip "../mar-tools-win64.zip"; mv mar-tools/certutil.exe mar-tools/nss-certutil.exe; cd ..; mkdir mar-tools-64; cd mar-tools-64; mv $(MARFILES_T64) .; cd ..; rm -rf tmp64;)
 
 .NOTPARALLEL: $(MARFILES_A32)
 .NOTPARALLEL: $(MARFILES_A64)

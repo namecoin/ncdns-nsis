@@ -1013,7 +1013,6 @@ Function un.Files
 
   Delete $INSTDIR\bin\mar-tools-32\nss-certutil.exe
   Delete $INSTDIR\bin\mar-tools-32\freebl3.dll
-  Delete $INSTDIR\bin\mar-tools-32\libssp-0.dll
   Delete $INSTDIR\bin\mar-tools-32\mozglue.dll
   Delete $INSTDIR\bin\mar-tools-32\nss3.dll
   Delete $INSTDIR\bin\mar-tools-32\nssdbm3.dll
@@ -1023,7 +1022,6 @@ Function un.Files
   !ifdef NCDNS_64BIT
     Delete $INSTDIR\bin\mar-tools-64\nss-certutil.exe
     Delete $INSTDIR\bin\mar-tools-64\freebl3.dll
-    Delete $INSTDIR\bin\mar-tools-64\libssp-0.dll
     Delete $INSTDIR\bin\mar-tools-64\mozglue.dll
     Delete $INSTDIR\bin\mar-tools-64\nss3.dll
     Delete $INSTDIR\bin\mar-tools-64\nssdbm3.dll
@@ -1331,7 +1329,6 @@ chose_yes:
   CreateDirectory $INSTDIR\bin\mar-tools-32
   File /oname=$INSTDIR\bin\mar-tools-32\nss-certutil.exe ${ARTIFACTS}\mar-tools-32\nss-certutil.exe
   File /oname=$INSTDIR\bin\mar-tools-32\freebl3.dll ${ARTIFACTS}\mar-tools-32\freebl3.dll
-  File /oname=$INSTDIR\bin\mar-tools-32\libssp-0.dll ${ARTIFACTS}\mar-tools-32\libssp-0.dll
   File /oname=$INSTDIR\bin\mar-tools-32\mozglue.dll ${ARTIFACTS}\mar-tools-32\mozglue.dll
   File /oname=$INSTDIR\bin\mar-tools-32\nss3.dll ${ARTIFACTS}\mar-tools-32\nss3.dll
   File /oname=$INSTDIR\bin\mar-tools-32\nssdbm3.dll ${ARTIFACTS}\mar-tools-32\nssdbm3.dll
@@ -1342,7 +1339,6 @@ chose_yes:
     CreateDirectory $INSTDIR\bin\mar-tools-64
     File /oname=$INSTDIR\bin\mar-tools-64\nss-certutil.exe ${ARTIFACTS}\mar-tools-64\nss-certutil.exe
     File /oname=$INSTDIR\bin\mar-tools-64\freebl3.dll ${ARTIFACTS}\mar-tools-64\freebl3.dll
-    File /oname=$INSTDIR\bin\mar-tools-64\libssp-0.dll ${ARTIFACTS}\mar-tools-64\libssp-0.dll
     File /oname=$INSTDIR\bin\mar-tools-64\mozglue.dll ${ARTIFACTS}\mar-tools-64\mozglue.dll
     File /oname=$INSTDIR\bin\mar-tools-64\nss3.dll ${ARTIFACTS}\mar-tools-64\nss3.dll
     File /oname=$INSTDIR\bin\mar-tools-64\nssdbm3.dll ${ARTIFACTS}\mar-tools-64\nssdbm3.dll
