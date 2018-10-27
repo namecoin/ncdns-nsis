@@ -1414,7 +1414,7 @@ chose_yes:
   DetailPrint "*** Firefox: Creating temporary DB directory $FirefoxTempDBDirectoryBackSlashes"
   CreateDirectory "$FirefoxTempDBDirectoryBackSlashes"
   DetailPrint "*** Firefox: Granting ncdns modify permission for temporary DB directory $FirefoxTempDBDirectoryBackSlashes"
-  nsExec::ExecToLog 'icacls "$FirefoxTempDBDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)M"'
+  nsExec::ExecToLog 'icacls "$FirefoxTempDBDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)M" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
 
   DetailPrint "*** Firefox: Granting ncdns modify permission for Firefox profile directory $FirefoxProfileDirectoryBackSlashes"
   # TODO: can we restrict this to only cert_override.txt and the NSS DB files?
