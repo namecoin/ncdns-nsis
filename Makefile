@@ -116,6 +116,9 @@ $(ARTIFACTS)/q.exe:
 
 ### MAR-TOOLS
 ##############################################################################
+# When bumping the mar-tools version, make sure to test whether its Visual C++
+# dependency has changed version, and change the detection functions in the
+# NSIS script accordingly.
 MARV=8.5a4
 $(ARTIFACTS)/mar-tools-win32.zip:
 	wget -O "$@" "https://dist.torproject.org/torbrowser/$(MARV)/mar-tools-win32.zip"

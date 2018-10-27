@@ -425,6 +425,18 @@ Function DetectBitcoinJRequirements
 FunctionEnd
 
 Function DetectFirefoxAnyArch
+  # Check for 64-bit Firefox requirements
+  # Visual C++ 2010 Redistributable is needed by Tor's certutil binaries
+  ${If} $VC2010_x86_64Detected == 0
+    StrCpy $Firefox64Error "Microsoft Visual C++ 2010 Redistributable Package must be installed"
+    Goto not_64
+  ${EndIf}
+  # Visual C++ 2015 Redistributable is needed by Mozilla's CKBI binaries
+  ${If} $VC2015_x86_64Detected == 0
+    StrCpy $Firefox64Error "Microsoft Visual C++ 2015 Redistributable Package must be installed"
+    Goto not_64
+  ${EndIf}
+
   # Check for 64-bit Firefox
   ${If} ${RunningX64}
     SetRegView 64
@@ -445,6 +457,20 @@ Function DetectFirefoxAnyArch
     StrCpy $Firefox64Error "Not running a 64-bit OS"
   ${EndIf}
 
+not_64:
+
+  # Check for 32-bit Firefox requirements
+  # Visual C++ 2010 Redistributable is needed by Tor's certutil binaries
+  ${If} $VC2010_x86_32Detected == 0
+    StrCpy $Firefox32Error "Microsoft Visual C++ 2010 Redistributable Package must be installed"
+    Goto not_32
+  ${EndIf}
+  # Visual C++ 2015 Redistributable is needed by Mozilla's CKBI binaries
+  ${If} $VC2015_x86_32Detected == 0
+    StrCpy $Firefox32Error "Microsoft Visual C++ 2015 Redistributable Package must be installed"
+    Goto not_32
+  ${EndIf}
+
   # Check for 32-bit Firefox
   SetRegView 32
   Call DetectFirefoxSingleArch
@@ -457,6 +483,8 @@ Function DetectFirefoxAnyArch
   ${Else}
     StrCpy $Firefox32Error "$FirefoxError"
   ${EndIf}
+
+not_32:
 
   # At this point, Firefox wasn't detected at all
   StrCpy $Firefox32Detected 0
