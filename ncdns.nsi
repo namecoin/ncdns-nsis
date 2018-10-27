@@ -1413,15 +1413,17 @@ chose_yes:
 
   DetailPrint "*** Firefox: Creating temporary DB directory $FirefoxTempDBDirectoryBackSlashes"
   CreateDirectory "$FirefoxTempDBDirectoryBackSlashes"
-  DetailPrint "*** Firefox: Granting ncdns full control of temporary DB directory $FirefoxTempDBDirectoryBackSlashes"
-  nsExec::ExecToLog 'icacls "$FirefoxTempDBDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)F"'
+  DetailPrint "*** Firefox: Granting ncdns modify permission for temporary DB directory $FirefoxTempDBDirectoryBackSlashes"
+  nsExec::ExecToLog 'icacls "$FirefoxTempDBDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)M"'
 
-  DetailPrint "*** Firefox: Granting ncdns full control of Firefox profile directory $FirefoxProfileDirectoryBackSlashes"
+  DetailPrint "*** Firefox: Granting ncdns modify permission for Firefox profile directory $FirefoxProfileDirectoryBackSlashes"
   # TODO: can we restrict this to only cert_override.txt and the NSS DB files?
-  nsExec::ExecToLog 'icacls "$FirefoxProfileDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)F"'
+  # Note: we don't use /inheritance:r here because it would prevent normal users from using Firefox.
+  nsExec::ExecToLog 'icacls "$FirefoxProfileDirectoryBackSlashes" /T /grant "NT SERVICE\ncdns:(OI)(CI)M"'
 
   DetailPrint "*** Firefox: Granting ncdns read permission for CKBI in Firefox install directory $FirefoxInstallDirectoryBackSlashes"
-  nsExec::ExecToLog 'icacls "$FirefoxInstallDirectoryBackSlashes" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R"'
+  # Note: we don't use /inheritance:r here because it would prevent normal users from using Firefox.
+  nsExec::ExecToLog 'icacls "$FirefoxInstallDirectoryBackSlashes" /T /grant "NT SERVICE\ncdns:(OI)(CI)R"'
 
   DetailPrint "*** Firefox: Granting ncdns read permission for Firefox version in Windows registry"
   File /oname=$PLUGINSDIR\regpermfirefoxversion.ps1 regpermfirefoxversion.ps1
