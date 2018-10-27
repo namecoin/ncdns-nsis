@@ -113,6 +113,8 @@ Var /GLOBAL BindRequirementsError
 Var /GLOBAL BitcoinJRequirementsMet
 Var /GLOBAL BitcoinJRequirementsError
 Var /GLOBAL FirefoxDetected
+Var /GLOBAL Firefox32Detected
+Var /GLOBAL Firefox64Detected
 Var /GLOBAL FirefoxCurrentVersion
 Var /GLOBAL FirefoxInstallDirectoryRegistryKey
 Var /GLOBAL FirefoxInstallDirectoryBackSlashes
@@ -128,6 +130,8 @@ Var /GLOBAL FirefoxProfileDirectoryForwardSlashes
 Var /GLOBAL FirefoxTempDBDirectoryBackSlashes
 Var /GLOBAL FirefoxTempDBDirectoryForwardSlashes
 Var /GLOBAL FirefoxError
+Var /GLOBAL Firefox32Error
+Var /GLOBAL Firefox64Error
 Var /GLOBAL FirefoxRejected
 
 # PRELAUNCH CHECKS
@@ -164,7 +168,7 @@ Function .onInit
   Call DetectVC2015_x86_64
   Call DetectBindRequirements
   Call DetectBitcoinJRequirements
-  Call DetectFirefox
+  Call DetectFirefoxAnyArch
 
   Call FailIfBindRequirementsNotMet
 FunctionEnd
@@ -420,7 +424,46 @@ Function DetectBitcoinJRequirements
   Pop $BitcoinJRequirementsMet
 FunctionEnd
 
-Function DetectFirefox
+Function DetectFirefoxAnyArch
+  # Check for 64-bit Firefox
+  ${If} ${RunningX64}
+    SetRegView 64
+    Call DetectFirefoxSingleArch
+    SetRegView lastused
+
+    ${If} $FirefoxDetected == 1
+      StrCpy $Firefox32Detected 0
+      StrCpy $Firefox64Detected 1
+
+      StrCpy $Firefox32Error "64-bit Firefox was detected and took priority"
+
+      Return
+    ${Else}
+      StrCpy $Firefox64Error "$FirefoxError"
+    ${EndIf}
+  ${Else}
+    StrCpy $Firefox64Error "Not running a 64-bit OS"
+  ${EndIf}
+
+  # Check for 32-bit Firefox
+  SetRegView 32
+  Call DetectFirefoxSingleArch
+  SetRegView lastused
+
+  ${If} $FirefoxDetected == 1
+    StrCpy $Firefox32Detected 1
+    StrCpy $Firefox64Detected 0
+    Return
+  ${Else}
+    StrCpy $Firefox32Error "$FirefoxError"
+  ${EndIf}
+
+  # At this point, Firefox wasn't detected at all
+  StrCpy $Firefox32Detected 0
+  StrCpy $Firefox64Detected 0
+FunctionEnd
+
+Function DetectFirefoxSingleArch
   # Check Firefox version
   ClearErrors
   ReadRegStr $FirefoxCurrentVersion HKLM "SOFTWARE\Mozilla\Mozilla Firefox" "CurrentVersion"
@@ -664,10 +707,16 @@ Function LogRequirementsChecks
     DetailPrint "$BitcoinJRequirementsError before BitcoinJ can be installed."
   ${EndIf}
 
-  ${If} $FirefoxDetected == 1
-    DetailPrint "Firefox was detected."
+  ${If} $Firefox32Detected == 1
+    DetailPrint "Firefox 32-bit was detected."
   ${Else}
-    DetailPrint "Firefox was not detected: $FirefoxError"
+    DetailPrint "Firefox 32-bit was not detected: $Firefox32Error"
+  ${EndIf}
+
+  ${If} $Firefox64Detected == 1
+    DetailPrint "Firefox 64-bit was detected."
+  ${Else}
+    DetailPrint "Firefox 64-bit was not detected: $Firefox64Error"
   ${EndIf}
 FunctionEnd
 
@@ -1303,9 +1352,16 @@ FunctionEnd
 ##############################################################################
 Function TLSFirefoxConfig
   # No-op if Firefox not detected.
-  ${If} $FirefoxDetected == 0
-    DetailPrint "*** Skipping Firefox config because Firefox was not detected"
-    Return
+  ${If} ${RunningX64}
+    ${If} $Firefox64Detected == 0
+      DetailPrint "*** Skipping Firefox config on 64-bit OS because Firefox 64-bit was not detected"
+      Return
+    ${EndIf}
+  ${Else}
+    ${If} $Firefox32Detected == 0
+      DetailPrint "*** Skipping Firefox config on 32-bit OS because Firefox 32-bit was not detected"
+      Return
+    ${EndIf}
   ${EndIf}
 
   ${If} $UseSPV == ${BST_CHECKED}
