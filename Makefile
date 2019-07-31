@@ -65,7 +65,14 @@ $(ARTIFACTS)/ncdns.exe: $(ARTIFACTS)/$(NCDNS_ARCFN)
 
 ### DNSSEC-KEYGEN
 ##############################################################################
-BINDV=9.13.2
+# When bumping the BIND version, make sure to test whether its Visual C++
+# dependency has changed version, and change the detection functions in the
+# NSIS script accordingly.  Also make sure you test both the 32-bit and 64-bit
+# versions for bumped Visual C++ dependencies; sometimes they might be bumped
+# independently.  Also make sure you test for *multiple* Visual C++
+# dependencies; sometimes a single program might link against multiple Visual
+# C++ dependencies.
+BINDV=9.13.3
 $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip:
 	wget -O "$@" "https://ftp.isc.org/isc/bind/$(BINDV)/BIND$(BINDV).$(BINDARCH).zip"
 
