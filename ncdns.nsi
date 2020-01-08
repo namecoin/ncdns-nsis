@@ -322,17 +322,18 @@ not_found:
 FunctionEnd
 
 Function DetectBindRequirements
-  # BIND's binaries link against *both* the Visual C++ 2012 and 2015
-  # Redistributables.  Don't ask me why, I don't know.
+  # BIND's binaries link against the Visual C++ 2015 Redistributable.  Older
+  # versions linked against the Visual C++ 2012 Redistributable, but current
+  # versions don't.
 
   ${If} ${RunningX64}
-    ${If} $VC2012_x86_64Detected == 0
-      Push 0
-      Pop $BindRequirementsMet
-      StrCpy $BindRequirementsURL "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
-      StrCpy $BindRequirementsError "ncdns for Windows requires the Microsoft Visual C++ 2012 (64-bit) Redistributable.$\n$\nYou can download it from:$\n$BindRequirementsURL"
-      Return
-    ${EndIf}
+    #${If} $VC2012_x86_64Detected == 0
+    #  Push 0
+    #  Pop $BindRequirementsMet
+    #  StrCpy $BindRequirementsURL "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+    #  StrCpy $BindRequirementsError "ncdns for Windows requires the Microsoft Visual C++ 2012 (64-bit) Redistributable.$\n$\nYou can download it from:$\n$BindRequirementsURL"
+    #  Return
+    #${EndIf}
     ${If} $VC2015_x86_64Detected == 0
       Push 0
       Pop $BindRequirementsMet
@@ -341,13 +342,13 @@ Function DetectBindRequirements
       Return
     ${EndIf}
   ${Else}
-    ${If} $VC2012_x86_32Detected == 0
-      Push 0
-      Pop $BindRequirementsMet
-      StrCpy $BindRequirementsURL "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
-      StrCpy $BindRequirementsError "ncdns for Windows requires the Microsoft Visual C++ 2012 (32-bit) Redistributable.$\n$\nYou can download it from:$\n$BindRequirementsURL"
-      Return
-    ${EndIf}
+    #${If} $VC2012_x86_32Detected == 0
+    #  Push 0
+    #  Pop $BindRequirementsMet
+    #  StrCpy $BindRequirementsURL "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+    #  StrCpy $BindRequirementsError "ncdns for Windows requires the Microsoft Visual C++ 2012 (32-bit) Redistributable.$\n$\nYou can download it from:$\n$BindRequirementsURL"
+    #  Return
+    #${EndIf}
     ${If} $VC2015_x86_32Detected == 0
       Push 0
       Pop $BindRequirementsMet
@@ -830,10 +831,13 @@ Function Files
   File /oname=$INSTDIR\bin\ncdns.exe ${ARTIFACTS}\ncdns.exe
   File /oname=$INSTDIR\etc\ncdns.conf ${NEUTRAL_ARTIFACTS}\ncdns.conf
 
+  # BIND files
   File /oname=$INSTDIR\bin\dnssec-keygen.exe ${ARTIFACTS}\dnssec-keygen.exe
-  File /oname=$INSTDIR\bin\libisc.dll ${ARTIFACTS}\libisc.dll
+  File /oname=$INSTDIR\bin\libcrypto-1_1-x64.dll ${ARTIFACTS}\libcrypto-1_1-x64.dll
   File /oname=$INSTDIR\bin\libdns.dll ${ARTIFACTS}\libdns.dll
-  File /oname=$INSTDIR\bin\libeay32.dll ${ARTIFACTS}\libeay32.dll
+  File /oname=$INSTDIR\bin\libisc.dll ${ARTIFACTS}\libisc.dll
+  File /oname=$INSTDIR\bin\libisccfg.dll ${ARTIFACTS}\libisccfg.dll
+  File /oname=$INSTDIR\bin\libuv.dll ${ARTIFACTS}\libuv.dll
   File /oname=$INSTDIR\bin\libxml2.dll ${ARTIFACTS}\libxml2.dll
 
 #!if /FileExists "${ARTIFACTS}\ncdt.exe"
@@ -879,15 +883,19 @@ FunctionEnd
 
 Function un.Files
   Delete $INSTDIR\bin\ncdns.exe
-  Delete $INSTDIR\bin\dnssec-keygen.exe
-  Delete $INSTDIR\bin\libisc.dll
-  Delete $INSTDIR\bin\libdns.dll
-  Delete $INSTDIR\bin\libeay32.dll
-  Delete $INSTDIR\bin\libxml2.dll
   Delete $INSTDIR\bin\ncdt.exe
   Delete $INSTDIR\bin\ncdumpzone.exe
   Delete $INSTDIR\bin\generate_nmc_cert.exe
   Delete $INSTDIR\bin\q.exe
+
+  # BIND files
+  Delete $INSTDIR\bin\dnssec-keygen.exe
+  Delete $INSTDIR\bin\libcrypto-1_1-x64.dll
+  Delete $INSTDIR\bin\libdns.dll
+  Delete $INSTDIR\bin\libisc.dll
+  Delete $INSTDIR\bin\libisccfg.dll
+  Delete $INSTDIR\bin\libuv.dll
+  Delete $INSTDIR\bin\libxml2.dll
 
   Delete $INSTDIR\etc\ncdns.conf
   Delete $INSTDIR\etc\ksk\bit.private
