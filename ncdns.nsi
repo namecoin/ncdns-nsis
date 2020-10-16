@@ -1085,16 +1085,12 @@ chose_yes:
 FunctionEnd
 
 Function TrustNameConstraintsConfig
-  DetailPrint "*** Populating store: AuthRoot"
-  File /oname=$PLUGINSDIR\ctlpop.ps1 ${NEUTRAL_ARTIFACTS}\ctlpop.ps1
-  CreateDirectory "$PLUGINSDIR\authrootstl"
-  FileOpen $4 "$PLUGINSDIR\ctlpop.cmd" w
-  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\ctlpop.ps1" "$PLUGINSDIR\authrootstl" < nul'
+  DetailPrint "*** Extracting AuthRootWU"
+  FileOpen $4 "$PLUGINSDIR\verifyctl.cmd" w
+  FileWrite $4 'certutil -v -f -verifyCTL AuthRootWU'
   FileClose $4
-  nsExec::ExecToLog '"$PLUGINSDIR\ctlpop.cmd"'
-  Delete $PLUGINSDIR\ctlpop.cmd
-  RMDir /r /REBOOTOK "$PLUGINSDIR\authrootstl"
-  Delete $PLUGINSDIR\ctlpop.ps1
+  nsExec::ExecToLog '"$PLUGINSDIR\verifyctl.cmd"'
+  Delete $PLUGINSDIR\verifyctl.cmd
 
   File /oname=$PLUGINSDIR\certinject.exe ${ARTIFACTS}\certinject.exe
 
@@ -1112,7 +1108,7 @@ Function TrustNameConstraintsConfig
   nsExec::ExecToLog '"$PLUGINSDIR\certinject-authroot.cmd"'
   Delete $PLUGINSDIR\certinject-authroot.cmd
 
-  # TODO: Configure name constraints for enteprise and group policy too.
+  # TODO: Configure name constraints for enterprise and group policy too.
   # TODO: Configure name constraints for bit.onion too.
 
   Delete $PLUGINSDIR\certinject.exe
