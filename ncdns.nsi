@@ -1086,9 +1086,7 @@ FunctionEnd
 
 Function TrustNameConstraintsConfig
   DetailPrint "*** Extracting AuthRootWU"
-  FileOpen $4 "$PLUGINSDIR\verifyctl.cmd" w
-  FileWrite $4 'certutil -v -f -verifyCTL AuthRootWU'
-  FileClose $4
+  File /oname=$PLUGINSDIR\verifyctl.cmd verifyctl.cmd
   nsExec::ExecToLog '"$PLUGINSDIR\verifyctl.cmd"'
   Delete $PLUGINSDIR\verifyctl.cmd
 
