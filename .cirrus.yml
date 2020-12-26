@@ -1,0 +1,63 @@
+# Attention: if you submit an improvement for a Namecoin Cirrus config, please
+# file a GitHub issue about it at the namecoin/meta repo, so that we can make
+# sure it propagates to all the other Namecoin repos.  Thanks!
+
+# TODO: Maybe cross-compile for Win32 targets too?
+task:
+  name: Cross-Compile
+  container:
+    image: fedora:latest
+    cpu: 1
+    memory: 1G
+  install_script:
+    - dnf install -y golang make mingw32-nsis unzip wget
+  # TODO: fetch latest versions of everything
+  fetch_script:
+    # TODO: remove this, download a binary of qexe instead
+    - go get -d -v github.com/miekg/exdns/q
+    # TODO: remove this, download ConsensusJ-Namecoin like we do everything else.
+    - mkdir -p build64/artifacts/
+    - curl -o build64/artifacts/bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
+  build_script:
+    # TODO: check for NSIS warnings
+    - make NCDNS_64BIT=1 NCDNS_PRODVER=v0.0.10.3
+  upload_script:
+    - curl -s -X POST --data-binary @build64/bin/ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin
+
+# TODO: functional/integration tests
+
+task:
+  # Cirrus Artifact Upload
+  name: Artifact Upload
+  container:
+    image: fedora:latest
+    cpu: 1
+    memory: 1G
+  depends_on:
+    - Cross-Compile
+  install_script:
+    - curl -o ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin
+  binaries_artifacts:
+    path: "ncdns-v0.0.10.3-win64-install.exe"
+
+# TODO: GitHub Release Upload
+
+# TODO: Add Windows unit tests
+
+# TODO: "Testing config parsing" from travis.bash
+
+# TODO: Add multiple Go versions to Gox builds and unit tests
+
+# TODO: Add debug stripping and path stripping to Gox for repro builds
+
+# TODO: Re-add darwin/386 for old Go versions where it was supported
+
+# TODO: Fix upload repo for tagged commits (don't use Nightly repo for this)
+
+# TODO: Skip Signify and Release if it's not applicable
+
+# TODO: Signify Nightlies
+
+# TODO: IRC notifications on failure
+
+# TODO: Cron
