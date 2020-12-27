@@ -601,10 +601,16 @@ Function DNSSECTrigger
 
   # Install DNSSEC Trigger
   DetailPrint "Installing DNSSEC Trigger..."
-  File /oname=$TEMP\dnssec_trigger_setup.exe ${ARTIFACTS}\${DNSSEC_TRIGGER_FN}
+  File /oname=$PLUGINSDIR\dnssec_trigger_setup.exe ${ARTIFACTS}\${DNSSEC_TRIGGER_FN}
 again:
-  ExecWait $TEMP\dnssec_trigger_setup.exe
+  IfSilent install_silent
+  # Install with NSIS GUI
+  ExecWait '"$PLUGINSDIR\dnssec_trigger_setup.exe"'
+  Goto detect
+install_silent:
+  ExecWait '"$PLUGINSDIR\dnssec_trigger_setup.exe" /S'
 
+detect:
   Call DetectUnbound
   ${If} $UnboundDetected == 0
     MessageBox "MB_OKCANCEL|MB_ICONSTOP" "DNSSEC Trigger was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
@@ -612,7 +618,7 @@ again:
   ${EndIf}
 
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledDNSSECTrigger" 1
-  Delete /REBOOTOK $TEMP\dnssec_trigger_setup.exe
+  Delete /REBOOTOK $PLUGINSDIR\dnssec_trigger_setup.exe
 !endif
 FunctionEnd
 
@@ -723,10 +729,16 @@ Function NamecoinCore
 
   # Install Namecoin Core
   DetailPrint "Installing Namecoin Core..."
-  File /oname=$TEMP\namecoin-setup-unsigned.exe ${ARTIFACTS}\${NAMECOIN_FN}
+  File /oname=$PLUGINSDIR\namecoin-setup-unsigned.exe ${ARTIFACTS}\${NAMECOIN_FN}
 again:
-  ExecWait $TEMP\namecoin-setup-unsigned.exe
+  IfSilent install_silent
+  # Install with NSIS GUI
+  ExecWait '"$PLUGINSDIR\namecoin-setup-unsigned.exe"'
+  Goto detect
+install_silent:
+  ExecWait '"$PLUGINSDIR\namecoin-setup-unsigned.exe" /S'
 
+detect:
   Call DetectNamecoinCore
   ${If} $NamecoinCoreDetected == 0
     MessageBox "MB_OKCANCEL|MB_ICONSTOP" "Namecoin Core was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
@@ -734,7 +746,7 @@ again:
   ${EndIf}
 
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledNamecoinCore" 1
-  Delete /REBOOTOK $TEMP\namecoin-setup-unsigned.exe
+  Delete /REBOOTOK $PLUGINSDIR\namecoin-setup-unsigned.exe
 !endif
 FunctionEnd
 
