@@ -15,9 +15,15 @@ task:
   fetch_script:
     # TODO: remove this, download a binary of qexe instead
     - go get -d -v github.com/miekg/exdns/q
-    # TODO: remove this, download ConsensusJ-Namecoin like we do everything else.
+    # TODO: remove this, download ConsensusJ-Namecoin and certinject like we do everything else.
     - mkdir -p build64/artifacts/
-    - curl -o build64/artifacts/bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
+    - cd build64/artifacts/
+    - curl -o bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
+    - curl -o certinject--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/certinject/Artifact%20Upload/binaries/dist/certinject--windows_amd64.tar.gz
+    - tar -xaf certinject--windows_amd64.tar.gz
+    - mv certinject--windows_amd64/bin/certinject.exe ./
+    - rm -rf certinject--windows_amd64/
+    - cd ../../
   build_script:
     # TODO: check for NSIS warnings
     - make NCDNS_64BIT=1 NCDNS_PRODVER=v0.0.10.3

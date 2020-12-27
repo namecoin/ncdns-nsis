@@ -11,6 +11,7 @@
 !endif
 
 !include "MUI2.nsh"
+!include "FileFunc.nsh"
 
 
 # INSTALLER SETTINGS
@@ -90,13 +91,7 @@ Var /GLOBAL UseSPV
 Var /GLOBAL NamecoinCoreDetected
 Var /GLOBAL UnboundDetected
 
-Var /GLOBAL CurChromium_Path
-Var /GLOBAL CurChromium_TransportSecurity
-Var /GLOBAL CurChromium_lockfile
-Var /GLOBAL FindHandle
-Var /GLOBAL ProfileName
-Var /GLOBAL ChromiumFound
-Var /GLOBAL ChromiumRejected
+Var /GLOBAL CrypoAPIRejected
 Var /GLOBAL JREPath
 Var /GLOBAL JREDetected
 Var /GLOBAL JRE32Detected
@@ -112,6 +107,7 @@ Var /GLOBAL BindRequirementsURL
 Var /GLOBAL BindRequirementsError
 Var /GLOBAL BitcoinJRequirementsMet
 Var /GLOBAL BitcoinJRequirementsError
+Var /GLOBAL ETLD
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -144,6 +140,8 @@ Function .onInit
   Call DetectVC2015_x86_64
   Call DetectBindRequirements
   Call DetectBitcoinJRequirements
+
+  Call DetectETLD
 
   Call FailIfBindRequirementsNotMet
 FunctionEnd
@@ -400,6 +398,17 @@ Function DetectBitcoinJRequirements
   Pop $BitcoinJRequirementsMet
 FunctionEnd
 
+Function DetectETLD
+  ClearErrors
+  ${GetOptions} $CMDLINE "/ETLD=" $ETLD
+  IfErrors 0 found
+
+  # If not found, use this default
+  StrCpy $ETLD "bit"
+
+found:
+FunctionEnd
+
 # DIALOG HELPERS
 ##############################################################################
 Function ShowCallback
@@ -550,6 +559,8 @@ Function LogRequirementsChecks
   ${Else}
     DetailPrint "$BitcoinJRequirementsError before BitcoinJ can be installed."
   ${EndIf}
+
+  DetailPrint "Using eTLD $ETLD."
 FunctionEnd
 
 # REGISTRY AND UNINSTALL INFORMATION INSTALLATION/UNINSTALLATION
@@ -1039,105 +1050,70 @@ FunctionEnd
 # REGISTRY PERMISSION CONFIGURATION FOR NCDNS TRUST INJECTION
 ##############################################################################
 Function TrustConfig
-  StrCpy $ChromiumFound 0
-  StrCpy $ChromiumRejected 0
+  StrCpy $CrypoAPIRejected 0
 
-  File /oname=$PLUGINSDIR\tlsrestrict_chromium_tool.exe ${ARTIFACTS}\tlsrestrict_chromium_tool.exe
+  Call PromptCryptoAPI
 
-  # Configure Chromium installations.
-  StrCpy $CurChromium_Path "$LOCALAPPDATA\Google\Chrome\User Data"
-  StrCpy $CurChromium_lockfile "$LOCALAPPDATA\Google\Chrome\User Data\lockfile"
-  Call ChromiumConfigAtLocSet
-  StrCpy $CurChromium_Path "$LOCALAPPDATA\Google\Chrome SxS\User Data"
-  StrCpy $CurChromium_lockfile "$LOCALAPPDATA\Google\Chrome SxS\User Data\lockfile"
-  Call ChromiumConfigAtLocSet
-  StrCpy $CurChromium_Path "$LOCALAPPDATA\Chromium\User Data"
-  StrCpy $CurChromium_lockfile "$LOCALAPPDATA\Chromium\User Data\lockfile"
-  Call ChromiumConfigAtLocSet
-
-  StrCpy $CurChromium_TransportSecurity "$APPDATA\Opera Software\Opera Stable\TransportSecurity"
-  StrCpy $CurChromium_lockfile "$APPDATA\Opera Software\Opera Stable\lockfile"
-  Call ChromiumConfigAtLoc
-
-  Delete $PLUGINSDIR\tlsrestrict_chromium_tool.exe
-
-  ${If} $ChromiumFound = 0
-    DetailPrint "*** Chromium support was not configured."
+  ${If} $CrypoAPIRejected = 1
+    DetailPrint "*** CryptoAPI HTTPS support was not configured."
     Return
   ${EndIf}
 
+  Call TrustNameConstraintsConfig
   Call TrustInjectionConfig
 
-  DetailPrint "*** Chromium support was configured."
+  DetailPrint "*** CryptoAPI HTTPS support was configured."
 FunctionEnd
 
 Function un.TrustConfig
   Call un.TrustInjectionConfig
 FunctionEnd
 
-Function ChromiumConfigAtLocSet
-  ClearErrors
-  FindFirst $FindHandle $ProfileName $CurChromium_Path\*
-again:
-  IfErrors done
-  DetailPrint "PFN '$ProfileName' under $CurChromium_Path"
-
-  StrCpy $CurChromium_TransportSecurity "$CurChromium_Path\$ProfileName\TransportSecurity"
-  Call ChromiumConfigAtLoc
-
-  ClearErrors
-  FindNext $FindHandle $ProfileName
-  Goto again
-
-done:
-  FindClose $FindHandle
-FunctionEnd
-
-Function ChromiumConfigAtLoc
-  # No-op if profile doesn't exist.
-  IfFileExists "$CurChromium_TransportSecurity" 0 not_found
-
-  # Don't re-prompt the user if they've already assented/declined once.
-  ${If} $ChromiumFound = 1
-    Goto chose_yes
-  ${EndIf}
-  ${If} $ChromiumRejected = 1
-    Goto chose_no
-  ${EndIf}
-
+Function PromptCryptoAPI
   # Prompt user.
-reprompt:
-  MessageBox MB_ICONQUESTION|MB_YESNO "You currently have Chromium or Google Chrome installed.  ncdns can enable HTTPS for Namecoin websites in Chromium/Chrome.  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).  If you plan to access Namecoin-enabled websites on this computer from any web browser other than Chromium, Chrome, Firefox, or Tor Browser, you should not enable HTTPS for Namecoin websites in Chromium/Chrome.$\n$\nWould you like to enable HTTPS for Namecoin websites in Chromium/Chrome?" /SD IDNO IDYES chose_yes IDNO chose_no
+  # TODO: Add to documentation: "The install script parses network-supplied data and is not yet sandboxed.  The install script will overwrite any existing Name Constraints properties that have been applied to certificates (though this is unlikely to be a problem, since we believe Namecoin is the only software that uses Name Constraints properties).  There may be edge cases (especially in poorly coded web browsers) where a malicious certificate signed by a compromised public non-Namecoin CA could still be accepted for Namecoin websites."
+  MessageBox MB_ICONQUESTION|MB_YESNO "ncdns can enable HTTPS for Namecoin websites in web browsers that use Windows for certificate verification (i.e. most web browsers that are not Mozilla-based).  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any previously-untrusted certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).$\n$\nThe HTTPS support is not yet foolproof!  See documentation for details.$\n$\nWould you like to enable HTTPS for Namecoin websites?" /SD IDNO IDYES chose_yes IDNO chose_no
 
 chose_no:
-  DetailPrint "*** Skipping profile because user elected not to configure Chromium/Chrome: $CurChromium_TransportSecurity"
-  StrCpy $ChromiumFound 0
-  StrCpy $ChromiumRejected 1
+  DetailPrint "*** User elected not to configure CryptoAPI HTTPS"
+  StrCpy $CrypoAPIRejected 1
   Return
 
 chose_yes:
-  StrCpy $ChromiumFound 1
-  StrCpy $ChromiumRejected 0
-
-check_again:
-  IfFileExists "$CurChromium_lockfile" 0 not_locked
-  MessageBox MB_OKCANCEL "One or more copies of Google Chrome or Chromium or a Chromium-based web browser appear to be open. Please close them before proceeding, then press OK." IDOK check_again IDCANCEL 0
-  Goto reprompt
-
-not_locked:
-  DetailPrint "*** Configuring Chromium/Chrome profile: $CurChromium_TransportSecurity"
-  FileOpen $4 "$PLUGINSDIR\tlsrestrict_chromium.cmd" w
-  FileWrite $4 '"$PLUGINSDIR\tlsrestrict_chromium_tool.exe" -tlsrestrict.chromium-ts-path="$CurChromium_TransportSecurity"'
-  FileClose $4
-  nsExec::ExecToLog '"$PLUGINSDIR\tlsrestrict_chromium.cmd"'
-  Delete $PLUGINSDIR\tlsrestrict_chromium.cmd
-
-not_found:
+  StrCpy $CrypoAPIRejected 0
   Return
 FunctionEnd
 
+Function TrustNameConstraintsConfig
+  DetailPrint "*** Extracting AuthRootWU"
+  File /oname=$PLUGINSDIR\verifyctl.cmd verifyctl.cmd
+  nsExec::ExecToLog '"$PLUGINSDIR\verifyctl.cmd"'
+  Delete $PLUGINSDIR\verifyctl.cmd
+
+  File /oname=$PLUGINSDIR\certinject.exe ${ARTIFACTS}\certinject.exe
+
+  DetailPrint "*** Configuring name constraints: Root"
+  FileOpen $4 "$PLUGINSDIR\certinject-root.cmd" w
+  FileWrite $4 '"$PLUGINSDIR\certinject.exe" -capi.physical-store=system -capi.logical-store=Root -capi.all-certs -certstore.cryptoapi -nc.excluded-dns=$ETLD'
+  FileClose $4
+  nsExec::ExecToLog '"$PLUGINSDIR\certinject-root.cmd"'
+  Delete $PLUGINSDIR\certinject-root.cmd
+
+  DetailPrint "*** Configuring name constraints: AuthRoot"
+  FileOpen $4 "$PLUGINSDIR\certinject-authroot.cmd" w
+  FileWrite $4 '"$PLUGINSDIR\certinject.exe" -capi.physical-store=system -capi.logical-store=AuthRoot -capi.all-certs -certstore.cryptoapi -nc.excluded-dns=$ETLD'
+  FileClose $4
+  nsExec::ExecToLog '"$PLUGINSDIR\certinject-authroot.cmd"'
+  Delete $PLUGINSDIR\certinject-authroot.cmd
+
+  # TODO: Configure name constraints for enterprise and group policy too.
+  # TODO: Configure name constraints for bit.onion too.
+
+  Delete $PLUGINSDIR\certinject.exe
+FunctionEnd
+
 Function TrustInjectionConfig
-  # Configure permissions
+  DetailPrint "*** Configuring cert store permissions"
   File /oname=$PLUGINSDIR\regpermrun.ps1 regpermrun.ps1
   File /oname=$PLUGINSDIR\regperm.ps1 regperm.ps1
   FileOpen $4 "$PLUGINSDIR\regpermrun.cmd" w
