@@ -30,7 +30,21 @@ task:
   upload_script:
     - curl -s -X POST --data-binary @build64/bin/ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin
 
-# TODO: functional/integration tests
+task:
+  name: TLS Handshake Tests
+  windows_container:
+    image: cirrusci/windowsservercore:2019
+  depends_on:
+    - "Cross-Compile"
+  install_script:
+    - curl -o ncdns-v0.0.10.3-win64-install.exe http://%CIRRUS_HTTP_CACHE_HOST%/cross_compile_bin
+    - ncdns-v0.0.10.3-win64-install.exe /S
+  test_script:
+    - SET PATH=%PATH%;%cd%
+    - powershell -ExecutionPolicy Unrestricted -File "testdata/ci-all-tests.ps1"
+  env:
+    GOX_TAGS: ""
+    GO_VERSION: latest
 
 task:
   # Cirrus Artifact Upload
