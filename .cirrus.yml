@@ -50,7 +50,6 @@ task:
     memory: 1G
   depends_on:
     - Cross-Compile
-    - Installation Tests
   install_script:
     - curl -o ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin
   binaries_artifacts:
