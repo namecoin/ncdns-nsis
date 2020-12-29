@@ -4,13 +4,25 @@
 
 # TODO: Maybe cross-compile for Win32 targets too?
 task:
-  name: Cross-Compile
-  container:
-    image: fedora:latest
-    cpu: 1
-    memory: 1G
-  install_script:
-    - dnf install -y golang make mingw32-nsis unzip wget
+  name: Cross-Compile $DISTRO
+  matrix:
+    - container:
+        image: fedora:latest
+        cpu: 1
+        memory: 1G
+      install_script:
+        - dnf install -y golang make mingw32-nsis unzip wget
+      env:
+        DISTRO: Fedora
+    - container:
+        image: debian:latest
+        cpu: 1
+        memory: 1G
+      install_script:
+        - apt-get update
+        - apt-get install -y curl git golang make nsis unzip wget
+      env:
+        DISTRO: Debian
   # TODO: fetch latest versions of everything
   fetch_script:
     # TODO: remove this, download a binary of qexe instead
@@ -28,18 +40,25 @@ task:
     # TODO: check for NSIS warnings
     - make NCDNS_64BIT=1 NCDNS_PRODVER=v0.0.10.3
   upload_script:
-    - curl -s -X POST --data-binary @build64/bin/ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin
+    - curl -s -X POST --data-binary @build64/bin/ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin_$DISTRO
 
 task:
-  name: Installation Tests
+  name: Installation Tests $BUILD_DISTRO
   windows_container:
     image: cirrusci/windowsservercore:2019
     # Don't use minimal CPU/memory since Namecoin Core may eat some.
-  depends_on:
-    - "Cross-Compile"
   install_script:
-    - curl -o ncdns-v0.0.10.3-win64-install.exe http://%CIRRUS_HTTP_CACHE_HOST%/cross_compile_bin
+    - curl -o ncdns-v0.0.10.3-win64-install.exe http://%CIRRUS_HTTP_CACHE_HOST%/cross_compile_bin_%BUILD_DISTRO%
     - ncdns-v0.0.10.3-win64-install.exe /S
+  matrix:
+    - env:
+        BUILD_DISTRO: Fedora
+      depends_on:
+        - "Cross-Compile Fedora"
+    - env:
+        BUILD_DISTRO: Debian
+      depends_on:
+        - "Cross-Compile Debian"
 
 task:
   # Cirrus Artifact Upload
@@ -49,7 +68,7 @@ task:
     cpu: 1
     memory: 1G
   depends_on:
-    - Cross-Compile
+    - Cross-Compile Fedora
   install_script:
     - curl -o ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin
   binaries_artifacts:
