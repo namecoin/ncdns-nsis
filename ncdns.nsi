@@ -469,6 +469,7 @@ FunctionEnd
 # INSTALL SECTIONS
 ##############################################################################
 Section "ncdns" Sec_ncdns
+  LogSet on
   SetOutPath $INSTDIR
   Call LogRequirementsChecks
   Call Reg
