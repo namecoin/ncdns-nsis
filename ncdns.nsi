@@ -116,7 +116,7 @@ Var /GLOBAL ETLD
 
 Function .onInit
   ${IfNot} ${AtLeastWinVista}
-    MessageBox "MB_OK|MB_ICONSTOP" "ncdns requires Windows Vista or later."
+    MessageBox "MB_OK|MB_ICONSTOP" "ncdns requires Windows Vista or later." /SD IDOK
     Abort
   ${EndIf}
 
@@ -155,7 +155,7 @@ Function CheckReinstall
   ReadRegStr $0 HKLM "System\CurrentControlSet\Services\ncdns" "ImagePath"
   IfErrors not_installed
 
-  MessageBox "MB_OK|MB_ICONSTOP" "ncdns for Windows is already installed.$\n$\nTo reinstall ncdns for Windows, first uninstall it."
+  MessageBox "MB_OK|MB_ICONSTOP" "ncdns for Windows is already installed.$\n$\nTo reinstall ncdns for Windows, first uninstall it." /SD IDOK
   Abort
 
 not_installed:
@@ -363,8 +363,10 @@ FunctionEnd
 
 Function FailIfBindRequirementsNotMet
   ${If} $BindRequirementsMet == 0
-    MessageBox "MB_OK|MB_ICONSTOP" "$BindRequirementsError"
+    MessageBox "MB_OK|MB_ICONSTOP" "$BindRequirementsError" /SD IDOK
+    IfSilent abort_silently
     ExecShell "open" "$BindRequirementsURL"
+abort_silently:
     Abort
   ${EndIf}
 FunctionEnd
@@ -643,7 +645,7 @@ Function un.DNSSECTrigger
  
 found:
   # Ask the user if they want to uninstall DNSSEC Trigger.
-  MessageBox MB_YESNO|MB_ICONQUESTION "When you installed ncdns for Windows, DNSSEC Trigger was installed automatically as a necessary dependency of ncdns for Windows. Would you like to remove it? If you leave it in place, you will not be able to connect to .bit domains, but will still enjoy DNSSEC-secured domain name lookups.$\n$\nSelect Yes to remove DNSSEC Trigger." IDYES 0 IDNO done
+  MessageBox MB_YESNO|MB_ICONQUESTION "When you installed ncdns for Windows, DNSSEC Trigger was installed automatically as a necessary dependency of ncdns for Windows. Would you like to remove it? If you leave it in place, you will not be able to connect to .bit domains, but will still enjoy DNSSEC-secured domain name lookups.$\n$\nSelect Yes to remove DNSSEC Trigger." /SD IDYES IDYES 0 IDNO done
 
   # Uninstall DNSSEC Trigger.
   DetailPrint "Uninstalling DNSSEC Trigger... $DNSSECTriggerUninstallCommand"
@@ -773,7 +775,7 @@ Function un.NamecoinCore
 
 found:
   # Ask the user if they want to uninstall Namecoin Core
-  MessageBox MB_YESNO|MB_ICONQUESTION "When you installed ncdns for Windows, Namecoin Core was installed automatically as a necessary dependency of ncdns for Windows. Would you like to remove it? If you leave it in place, you will not be able to connect to .bit domains, but will still be able to use Namecoin Core as a Namecoin node and wallet.$\n$\nSelect Yes to remove Namecoin Core." IDYES 0 IDNO done
+  MessageBox MB_YESNO|MB_ICONQUESTION "When you installed ncdns for Windows, Namecoin Core was installed automatically as a necessary dependency of ncdns for Windows. Would you like to remove it? If you leave it in place, you will not be able to connect to .bit domains, but will still be able to use Namecoin Core as a Namecoin node and wallet.$\n$\nSelect Yes to remove Namecoin Core." /SD IDYES IDYES 0 IDNO done
 
   # Uninstall Namecoin Core.
   DetailPrint "Uninstalling Namecoin Core... $NamecoinCoreUninstallCommand"
