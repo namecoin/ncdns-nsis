@@ -23,4 +23,9 @@ Build flags:
   - `make NO_DNSSEC_TRIGGER=1` — do not bundle DNSSEC-Trigger.
   - `make NCDNS_LOGGING=1` — write install logs to `$INSTDIR\install.log`.  Requires NSIS to be built with `NSIS_CONFIG_LOG=yes`; this is supported by default on Fedora but not on Debian.
 
+Install-time flags:
+
+  - `/S` — install silently.
+  - `/ETLD=org` — set up the TLS name constraints exclusion with a different eTLD from the default `bit`.  Only useful for debugging.
+
 Licenced under the MIT License.
