@@ -2,6 +2,15 @@
 # file a GitHub issue about it at the namecoin/meta repo, so that we can make
 # sure it propagates to all the other Namecoin repos.  Thanks!
 
+task:
+  name: Lint
+  container:
+    image: fedora:latest
+    cpu: 1
+    memory: 1G
+  lint_script:
+    ./lint.sh
+
 # TODO: Maybe cross-compile for Win32 targets too?
 task:
   name: Cross-Compile $DISTRO
