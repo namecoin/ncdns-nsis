@@ -471,7 +471,9 @@ FunctionEnd
 # INSTALL SECTIONS
 ##############################################################################
 Section "ncdns" Sec_ncdns
-  LogSet on
+  !ifdef ENABLE_LOGGING
+    LogSet on
+  !endif
   SetOutPath $INSTDIR
   Call LogRequirementsChecks
   Call Reg

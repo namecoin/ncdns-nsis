@@ -23,6 +23,7 @@ task:
         - dnf install -y golang make mingw32-nsis unzip wget
       env:
         DISTRO: Fedora
+        NCDNS_LOGGING: "1"
     - container:
         image: debian:latest
         cpu: 1
