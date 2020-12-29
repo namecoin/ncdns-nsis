@@ -58,7 +58,8 @@ task:
     # Don't use minimal CPU/memory since Namecoin Core may eat some.
   install_script:
     - curl -o ncdns-v0.0.10.3-win64-install.exe http://%CIRRUS_HTTP_CACHE_HOST%/cross_compile_bin_%BUILD_DISTRO%
-    - ncdns-v0.0.10.3-win64-install.exe /S
+    - 'ncdns-v0.0.10.3-win64-install.exe /S || type "C:\Program Files\ncdns\install.log"'
+    - 'type "C:\Program Files\ncdns\install.log"'
   matrix:
     - env:
         BUILD_DISTRO: Fedora
