@@ -19,5 +19,13 @@ Build flags:
 
   - `make NCDNS_64BIT=1` — make a 64-bit build.
   - `make NCDNS_PRODVER=0.0.0.1` — set ncdns product version.
+  - `make NO_NAMECOIN_CORE=1` — do not bundle Namecoin Core.
+  - `make NO_DNSSEC_TRIGGER=1` — do not bundle DNSSEC-Trigger.
+  - `make NCDNS_LOGGING=1` — write install logs to `$INSTDIR\install.log`.  Requires NSIS to be built with `NSIS_CONFIG_LOG=yes`; this is supported by default on Fedora but not on Debian.
+
+Install-time flags:
+
+  - `/S` — install silently.
+  - `/ETLD=org` — set up the TLS name constraints exclusion with a different eTLD from the default `bit`.  Only useful for debugging.
 
 Licenced under the MIT License.
