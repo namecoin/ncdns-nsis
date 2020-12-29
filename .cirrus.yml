@@ -9,7 +9,7 @@ task:
     cpu: 1
     memory: 1G
   lint_script:
-    ./lint.sh
+    ./testdata/lint.sh
 
 # TODO: Maybe cross-compile for Win32 targets too?
 task:
@@ -56,10 +56,17 @@ task:
   windows_container:
     image: cirrusci/windowsservercore:2019
     # Don't use minimal CPU/memory since Namecoin Core may eat some.
+  matrix:
+    - env:
+        INSTALL_VCPP: "0"
+    - env:
+        INSTALL_VCPP: "1"
+      vcpp_script:
+        - choco install -y vcredist140
   install_script:
     - curl -o ncdns-v0.0.10.3-win64-install.exe http://%CIRRUS_HTTP_CACHE_HOST%/cross_compile_bin_%BUILD_DISTRO%
-    - 'ncdns-v0.0.10.3-win64-install.exe /S || type "C:\Program Files\ncdns\install.log"'
-    - 'type "C:\Program Files\ncdns\install.log"'
+    - SET PATH=%PATH%;%cd%
+    - powershell -ExecutionPolicy Unrestricted -File "testdata/install.ps1"
   matrix:
     - env:
         BUILD_DISTRO: Fedora
