@@ -49,11 +49,11 @@ task:
   build_script:
     # TODO: check for NSIS warnings
     - make NCDNS_64BIT=1 NCDNS_PRODVER=v0.0.10.3
-    - mv build64/bin/ncdns-v0.0.10.3-win64-install.exe ./
+    - mv build64/bin/ncdns-*-win64-install.exe ./ncdns--win64-install.exe
   upload_script:
-    - curl -s -X POST --data-binary @ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin_$DISTRO
+    - curl -s -X POST --data-binary @ncdns--win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin_$DISTRO
   binaries_artifacts:
-    path: "ncdns-v0.0.10.3-win64-install.exe"
+    path: "ncdns--win64-install.exe"
 
 task:
   name: Installation Tests $BUILD_DISTRO
@@ -68,7 +68,7 @@ task:
       vcpp_script:
         - choco install -y vcredist140
   install_script:
-    - curl -o ncdns-v0.0.10.3-win64-install.exe http://%CIRRUS_HTTP_CACHE_HOST%/cross_compile_bin_%BUILD_DISTRO%
+    - curl -o ncdns--win64-install.exe http://%CIRRUS_HTTP_CACHE_HOST%/cross_compile_bin_%BUILD_DISTRO%
     - SET PATH=%PATH%;%cd%
     - powershell -ExecutionPolicy Unrestricted -File "testdata/install.ps1"
   matrix:

@@ -2,7 +2,7 @@ $should_succeed = $Env:INSTALL_VCPP -eq "1"
 
 try {
   # Pipe to Out-Null so that PowerShell waits for the program to exit.
-  & ncdns-v0.0.10.3-win64-install.exe /S | Out-Null
+  & ncdns--win64-install.exe /S | Out-Null
   $success = $?
 
   if ( ( $success ) -ne ( $should_succeed ) ) {
