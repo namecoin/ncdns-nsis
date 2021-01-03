@@ -49,8 +49,11 @@ task:
   build_script:
     # TODO: check for NSIS warnings
     - make NCDNS_64BIT=1 NCDNS_PRODVER=v0.0.10.3
+    - mv build64/bin/ncdns-v0.0.10.3-win64-install.exe ./
   upload_script:
-    - curl -s -X POST --data-binary @build64/bin/ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin_$DISTRO
+    - curl -s -X POST --data-binary @ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin_$DISTRO
+  binaries_artifacts:
+    path: "ncdns-v0.0.10.3-win64-install.exe"
 
 task:
   name: Installation Tests $BUILD_DISTRO
@@ -77,20 +80,6 @@ task:
         BUILD_DISTRO: Debian
       depends_on:
         - "Cross-Compile Debian"
-
-task:
-  # Cirrus Artifact Upload
-  name: Artifact Upload
-  container:
-    image: fedora:latest
-    cpu: 1
-    memory: 1G
-  depends_on:
-    - Cross-Compile Fedora
-  install_script:
-    - curl -o ncdns-v0.0.10.3-win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin
-  binaries_artifacts:
-    path: "ncdns-v0.0.10.3-win64-install.exe"
 
 # TODO: GitHub Release Upload
 
