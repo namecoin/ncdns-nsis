@@ -48,7 +48,7 @@ task:
     - cd ../../
   build_script:
     # TODO: check for NSIS warnings
-    - make NCDNS_64BIT=1 NCDNS_PRODVER=v0.0.10.3
+    - make NCDNS_64BIT=1 NCDNS_PRODVER=v0.1
     - mv build64/bin/ncdns-*-win64-install.exe ./ncdns--win64-install.exe
   upload_script:
     - curl -s -X POST --data-binary @ncdns--win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin_$DISTRO

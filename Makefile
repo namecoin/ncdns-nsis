@@ -12,7 +12,24 @@ ifeq ($(NCDNS_PRODVER),)
 	NCDNS_PRODVER=0.0.0
 endif
 
-NCDNS_PRODVER_W=$(shell echo "$(NCDNS_PRODVER)" | sed 's/^v//' | sed 's/$$/.0/')
+# Remove leading v
+NCDNS_PRODVER_1TUP=$(shell echo "$(NCDNS_PRODVER)" | sed 's/^v//')
+# Append ".0" until the version is a 4-tuple
+ifneq ($(shell echo "$(NCDNS_PRODVER_1TUP)" | grep -E '^[0-9]+$$'),)
+	NCDNS_PRODVER_2TUP=$(shell echo "$(NCDNS_PRODVER_1TUP)" | sed 's/$$/.0/')
+else
+	NCDNS_PRODVER_2TUP=$(NCDNS_PRODVER_1TUP)
+endif
+ifneq ($(shell echo "$(NCDNS_PRODVER_2TUP)" | grep -E '^[0-9]+\.[0-9]+$$'),)
+	NCDNS_PRODVER_3TUP=$(shell echo "$(NCDNS_PRODVER_2TUP)" | sed 's/$$/.0/')
+else
+	NCDNS_PRODVER_3TUP=$(NCDNS_PRODVER_2TUP)
+endif
+ifneq ($(shell echo "$(NCDNS_PRODVER_3TUP)" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$$'),)
+	NCDNS_PRODVER_W=$(shell echo "$(NCDNS_PRODVER_3TUP)" | sed 's/$$/.0/')
+else
+	NCDNS_PRODVER_W=$(NCDNS_PRODVER_3TUP)
+endif
 
 _NO_NAMECOIN_CORE=
 ifeq ($(NO_NAMECOIN_CORE),1)
@@ -59,7 +76,7 @@ NCDNS_ARCFN=ncdns-$(NCDNS_PRODVER)-windows_$(GOARCH).tar.gz
 
 $(ARTIFACTS)/$(NCDNS_ARCFN):
 	mkdir -p "$(ARTIFACTS)"
-	wget -O "$@" "https://github.com/namecoin/ncdns/releases/download/$(NCDNS_PRODVER)/$(NCDNS_ARCFN)"
+	wget -O "$@" "https://api.cirrus-ci.com/v1/artifact/github/namecoin/ncdns/Cross-Compile Go latest/binaries/dist/$(NCDNS_ARCFN)?branch=$(NCDNS_PRODVER)"
 
 EXES=ncdns ncdumpzone generate_nmc_cert ncdt tlsrestrict_chromium_tool
 EXES_A=$(foreach k,$(EXES),$(ARTIFACTS)/$(k).exe)
