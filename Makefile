@@ -59,7 +59,7 @@ NCDNS_ARCFN=ncdns-$(NCDNS_PRODVER)-windows_$(GOARCH).tar.gz
 
 $(ARTIFACTS)/$(NCDNS_ARCFN):
 	mkdir -p "$(ARTIFACTS)"
-	wget -O "$@" "https://github.com/namecoin/ncdns/releases/download/$(NCDNS_PRODVER)/$(NCDNS_ARCFN)"
+	wget -O "$@" "https://api.cirrus-ci.com/v1/artifact/github/namecoin/ncdns/Cross-Compile Go latest/binaries/dist/$(NCDNS_ARCFN)?branch=$(NCDNS_PRODVER)"
 
 EXES=ncdns ncdumpzone generate_nmc_cert ncdt tlsrestrict_chromium_tool
 EXES_A=$(foreach k,$(EXES),$(ARTIFACTS)/$(k).exe)
