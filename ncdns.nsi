@@ -117,6 +117,8 @@ Var /GLOBAL CoreCookieDirReturnCode
 Var /GLOBAL CoreCookieFileReturnCode
 Var /GLOBAL EtcReturnCode
 Var /GLOBAL EtcConfReturnCode
+Var /GLOBAL EtcConfDReturnCode
+Var /GLOBAL EtcConfXlogReturnCode
 Var /GLOBAL EtcZskReturnCode
 Var /GLOBAL EtcZskPrivReturnCode
 Var /GLOBAL EtcZskPubReturnCode
@@ -503,6 +505,7 @@ Section "ncdns" Sec_ncdns
   Call FilesSecurePre
   Call KeyConfig
   Call FilesSecure
+  Call ServiceEventLog
   Call ServiceStart
   Call UnboundConfig
 
@@ -603,6 +606,7 @@ FunctionEnd
 
 Function un.Reg
   DeleteRegKey HKLM "Software\Namecoin\ncdns"
+  DeleteRegKey HKLM "System\CurrentControlSet\Services\EventLog\Application\ncdns"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns"
 FunctionEnd
 
@@ -888,6 +892,8 @@ Function Files
   File /oname=$INSTDIR\namecoin.ico media\namecoin.ico
   File /oname=$INSTDIR\bin\ncdns.exe ${ARTIFACTS}\ncdns.exe
   File /oname=$INSTDIR\etc\ncdns.conf ${NEUTRAL_ARTIFACTS}\ncdns.conf
+  CreateDirectory $INSTDIR\etc\ncdns.conf.d
+  File /oname=$INSTDIR\etc\ncdns.conf.d\xlog.conf ${NEUTRAL_ARTIFACTS}\ncdns.conf.d\xlog.conf
 
   # BIND files
   File /oname=$INSTDIR\bin\dnssec-keygen.exe ${ARTIFACTS}\dnssec-keygen.exe
@@ -941,6 +947,20 @@ Function FilesSecure
   ${If} $EtcConfReturnCode != 0
     DetailPrint "Failed to set ACL on ncdns config: return code $EtcConfReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns config." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf.d" /reset'
+  Pop $EtcConfDReturnCode
+  ${If} $EtcConfDReturnCode != 0
+    DetailPrint "Failed to set ACL on ncdns config dir: return code $EtcConfDReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns config dir." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf.d\xlog.conf" /reset'
+  Pop $EtcConfXlogReturnCode
+  ${If} $EtcConfXlogReturnCode != 0
+    DetailPrint "Failed to set ACL on ncdns xlog config: return code $EtcConfXlogReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns xlog config." /SD IDOK
     Abort
   ${EndIf}
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk" /reset'
@@ -1003,12 +1023,14 @@ Function un.Files
   Delete $INSTDIR\bin\libuv.dll
   Delete $INSTDIR\bin\libxml2.dll
 
+  Delete $INSTDIR\etc\ncdns.conf.d\xlog.conf
   Delete $INSTDIR\etc\ncdns.conf
   Delete $INSTDIR\etc\ksk\bit.private
   Delete $INSTDIR\bit.key
   Delete $INSTDIR\etc\zsk\bit.private
   Delete $INSTDIR\etc\zsk\bit.key
   RMDir $INSTDIR\bin
+  RMDir $INSTDIR\etc\ncdns.conf.d
   RMDir $INSTDIR\etc\ksk
   RMDir $INSTDIR\etc\zsk
   RMDir $INSTDIR\etc
@@ -1069,6 +1091,12 @@ Function Service
   # Set the proper image path manually rather than try to escape it properly
   # above.
   WriteRegStr HKLM "System\CurrentControlSet\Services\ncdns" "ImagePath" '"$INSTDIR\bin\ncdns.exe" "-conf=$INSTDIR\etc\ncdns.conf"'
+FunctionEnd
+
+Function ServiceEventLog
+  WriteRegStr HKLM "System\CurrentControlSet\Services\EventLog\Application\ncdns" "EventMessageFile" "%SystemRoot%\System32\EventCreate.exe"
+  # 7 == Error | Warning | Info
+  WriteRegDWORD HKLM "System\CurrentControlSet\Services\EventLog\Application\ncdns" "TypesSupported" 7
 FunctionEnd
 
 Function ServiceStart
