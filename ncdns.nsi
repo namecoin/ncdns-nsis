@@ -1035,6 +1035,7 @@ Function un.Files
   RMDir $INSTDIR\etc\zsk
   RMDir $INSTDIR\etc
   Delete $INSTDIR\namecoin.ico
+  Delete $INSTDIR\install.log
   Delete $INSTDIR\uninst.exe
 FunctionEnd
 
