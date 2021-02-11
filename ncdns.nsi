@@ -113,6 +113,16 @@ Var /GLOBAL ServiceCreateReturnCode
 Var /GLOBAL ServiceSidtypeReturnCode
 Var /GLOBAL ServiceDescriptionReturnCode
 Var /GLOBAL ServicePrivsReturnCode
+Var /GLOBAL CoreCookieDirReturnCode
+Var /GLOBAL CoreCookieFileReturnCode
+Var /GLOBAL EtcReturnCode
+Var /GLOBAL EtcConfReturnCode
+Var /GLOBAL EtcZskReturnCode
+Var /GLOBAL EtcZskPrivReturnCode
+Var /GLOBAL EtcZskPubReturnCode
+Var /GLOBAL EtcKskReturnCode
+Var /GLOBAL EtcKskPrivReturnCode
+Var /GLOBAL EtcKskPubReturnCode
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -701,7 +711,22 @@ haveDataDir:
   # Configure cookie directory.
   CreateDirectory C:\ProgramData\NamecoinCookie
   nsExec::ExecToLog 'icacls "C:\ProgramData\NamecoinCookie" /inheritance:r /T /grant "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" "Users:(OI)(CI)F"'
+  Pop $CoreCookieDirReturnCode
+  ${If} $CoreCookieDirReturnCode != 0
+    DetailPrint "Failed to set ACL on Namecoin Core cookie directory: return code $CoreCookieDirReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on Namecoin Core cookie directory." /SD IDOK
+    Abort
+  ${EndIf}
   nsExec::ExecToLog 'icacls "C:\ProgramData\NamecoinCookie\.cookie" /reset'
+  Pop $CoreCookieFileReturnCode
+  # The cookie file might not exist, which will yield return code 2.
+  # See https://github.com/MicrosoftDocs/windowsserverdocs/issues/3303
+  ${IfNot} $CoreCookieFileReturnCode == 0
+  ${AndIfNot} $CoreCookieFileReturnCode == 2
+    DetailPrint "Failed to set ACL on Namecoin Core cookie file: return code $CoreCookieFileReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on Namecoin Core cookie file." /SD IDOK
+    Abort
+  ${EndIf}
 
   # Now we need to make sure namecoin.conf exists and has 'server=1'.
   # We'll do this with a powershell script, much as we do for configuring Unbound.
@@ -900,18 +925,66 @@ FunctionEnd
 
 Function FilesSecurePre
   nsExec::ExecToLog 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+  Pop $EtcReturnCode
+  ${If} $EtcReturnCode != 0
+    DetailPrint "Failed to set ACL on etc: return code $EtcReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on etc." /SD IDOK
+    Abort
+  ${EndIf}
 FunctionEnd
 
 Function FilesSecure
   # Ensure only ncdns service and administrators can read ncdns.conf.
   Call FilesSecurePre
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
+  Pop $EtcConfReturnCode
+  ${If} $EtcConfReturnCode != 0
+    DetailPrint "Failed to set ACL on ncdns config: return code $EtcConfReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns config." /SD IDOK
+    Abort
+  ${EndIf}
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk" /reset'
+  Pop $EtcZskReturnCode
+  ${If} $EtcZskReturnCode != 0
+    DetailPrint "Failed to set ACL on ZSK directory: return code $EtcZskReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ZSK directory." /SD IDOK
+    Abort
+  ${EndIf}
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.private" /reset'
+  Pop $EtcZskPrivReturnCode
+  ${If} $EtcZskPrivReturnCode != 0
+    DetailPrint "Failed to set ACL on ZSK private key: return code $EtcZskPrivReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ZSK private key." /SD IDOK
+    Abort
+  ${EndIf}
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.key" /reset'
+  Pop $EtcZskPubReturnCode
+  ${If} $EtcZskPubReturnCode != 0
+    DetailPrint "Failed to set ACL on ZSK public key: return code $EtcZskPubReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ZSK public key." /SD IDOK
+    Abort
+  ${EndIf}
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\ksk" /reset'
+  Pop $EtcKskReturnCode
+  ${If} $EtcKskReturnCode != 0
+    DetailPrint "Failed to set ACL on KSK directory: return code $EtcKskReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on KSK directory." /SD IDOK
+    Abort
+  ${EndIf}
   nsExec::ExecToLog 'icacls "$INSTDIR\etc\ksk\bit.private" /reset'
+  Pop $EtcKskPrivReturnCode
+  ${If} $EtcKskPrivReturnCode != 0
+    DetailPrint "Failed to set ACL on KSK private key: return code $EtcKskPrivReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on KSK private key." /SD IDOK
+    Abort
+  ${EndIf}
   nsExec::ExecToLog 'icacls "$INSTDIR\bit.key" /reset'
+  Pop $EtcKskPubReturnCode
+  ${If} $EtcKskPubReturnCode != 0
+    DetailPrint "Failed to set ACL on KSK public key: return code $EtcKskPubReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on KSK public key." /SD IDOK
+    Abort
+  ${EndIf}
 FunctionEnd
 
 Function un.Files
