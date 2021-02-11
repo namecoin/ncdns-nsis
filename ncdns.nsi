@@ -109,6 +109,11 @@ Var /GLOBAL BitcoinJRequirementsMet
 Var /GLOBAL BitcoinJRequirementsError
 Var /GLOBAL ETLD
 
+Var /GLOBAL ServiceCreateReturnCode
+Var /GLOBAL ServiceSidtypeReturnCode
+Var /GLOBAL ServiceDescriptionReturnCode
+Var /GLOBAL ServicePrivsReturnCode
+
 # PRELAUNCH CHECKS
 ##############################################################################
 !Include WinVer.nsh
@@ -958,12 +963,36 @@ FunctionEnd
 ##############################################################################
 Function Service
   nsExec::ExecToLog 'sc create ncdns binPath= "ncdns.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "ncdns"'
+  Pop $ServiceCreateReturnCode
+  ${If} $ServiceCreateReturnCode != 0
+    DetailPrint "Failed to create ncdns service: return code $ServiceCreateReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to create ncdns service." /SD IDOK
+    Abort
+  ${EndIf}
   # Use service SID.
   nsExec::ExecToLog 'sc sidtype ncdns restricted'
+  Pop $ServiceSidtypeReturnCode
+  ${If} $ServiceSidtypeReturnCode != 0
+    DetailPrint "Failed to restrict ncdns service: return code $ServiceSidtypeReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to restrict ncdns service." /SD IDOK
+    Abort
+  ${EndIf}
   nsExec::ExecToLog 'sc description ncdns "Namecoin ncdns daemon"'
+  Pop $ServiceDescriptionReturnCode
+  ${If} $ServiceDescriptionReturnCode != 0
+    DetailPrint "Failed to set description on ncdns service: return code $ServiceDescriptionReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set description on ncdns service." /SD IDOK
+    Abort
+  ${EndIf}
   # Restrict privileges. 'sc privs' interprets an empty list as meaning no
   # privilege restriction... this one seems low-risk.
   nsExec::ExecToLog 'sc privs ncdns "SeChangeNotifyPrivilege"'
+  Pop $ServicePrivsReturnCode
+  ${If} $ServicePrivsReturnCode != 0
+    DetailPrint "Failed to set privileges on ncdns service: return code $ServicePrivsReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set privileges on ncdns service." /SD IDOK
+    Abort
+  ${EndIf}
   # Set the proper image path manually rather than try to escape it properly
   # above.
   WriteRegStr HKLM "System\CurrentControlSet\Services\ncdns" "ImagePath" '"$INSTDIR\bin\ncdns.exe" "-conf=$INSTDIR\etc\ncdns.conf"'
