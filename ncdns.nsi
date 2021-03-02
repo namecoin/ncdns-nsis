@@ -113,6 +113,7 @@ Var /GLOBAL ServiceCreateReturnCode
 Var /GLOBAL ServiceSidtypeReturnCode
 Var /GLOBAL ServiceDescriptionReturnCode
 Var /GLOBAL ServicePrivsReturnCode
+Var /GLOBAL ServiceStartReturnCode
 Var /GLOBAL CoreCookieDirReturnCode
 Var /GLOBAL CoreCookieFileReturnCode
 Var /GLOBAL EtcReturnCode
@@ -1101,7 +1102,13 @@ Function ServiceEventLog
 FunctionEnd
 
 Function ServiceStart
-  nsExec::Exec 'net start ncdns'
+  nsExec::ExecToLog 'net start ncdns'
+  Pop $ServiceStartReturnCode
+  ${If} $ServiceStartReturnCode != 0
+    DetailPrint "Failed to start ncdns service: return code $ServiceStartReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to start ncdns service." /SD IDOK
+    Abort
+  ${EndIf}
 FunctionEnd
 
 Function un.Service
