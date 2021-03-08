@@ -37,7 +37,7 @@ task:
   fetch_script:
     # TODO: remove this, download a binary of qexe instead
     - go get -d -v github.com/miekg/exdns/q
-    # TODO: remove this, download ConsensusJ-Namecoin and certinject like we do everything else.
+    # TODO: remove this, download ConsensusJ-Namecoin, certinject, and Encaya like we do everything else.
     - mkdir -p build64/artifacts/
     - cd build64/artifacts/
     - curl -o bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
@@ -45,6 +45,10 @@ task:
     - tar -xaf certinject--windows_amd64.tar.gz
     - mv certinject--windows_amd64/bin/certinject.exe ./
     - rm -rf certinject--windows_amd64/
+    - curl -o encaya--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/encaya/Cross-Compile%20Go%20latest/binaries/dist/encaya--windows_amd64.tar.gz
+    - tar -xaf encaya--windows_amd64.tar.gz
+    - mv encaya--windows_amd64/bin/encaya.exe ./
+    - rm -rf encaya--windows_amd64/
     - cd ../../
   build_script:
     # TODO: check for NSIS warnings

@@ -1215,12 +1215,14 @@ Function TrustConfig
   ${EndIf}
 
   Call TrustNameConstraintsConfig
+  Call TrustEncayaConfig
   Call TrustInjectionConfig
 
   DetailPrint "*** CryptoAPI HTTPS support was configured."
 FunctionEnd
 
 Function un.TrustConfig
+  Call un.TrustEncayaConfig
   Call un.TrustInjectionConfig
 FunctionEnd
 
@@ -1237,6 +1239,14 @@ chose_no:
 chose_yes:
   StrCpy $CrypoAPIRejected 0
   Return
+FunctionEnd
+
+Function TrustEncayaConfig
+  File /oname=$INSTDIR\bin\encaya.exe ${ARTIFACTS}\encaya.exe
+FunctionEnd
+
+Function un.TrustEncayaConfig
+  Delete $INSTDIR\bin\encaya.exe
 FunctionEnd
 
 Function TrustNameConstraintsConfig
