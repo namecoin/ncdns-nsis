@@ -109,11 +109,11 @@ Var /GLOBAL BitcoinJRequirementsMet
 Var /GLOBAL BitcoinJRequirementsError
 Var /GLOBAL ETLD
 
-Var /GLOBAL ServiceCreateReturnCode
-Var /GLOBAL ServiceSidtypeReturnCode
-Var /GLOBAL ServiceDescriptionReturnCode
-Var /GLOBAL ServicePrivsReturnCode
-Var /GLOBAL ServiceStartReturnCode
+Var /GLOBAL ServiceNcdnsCreateReturnCode
+Var /GLOBAL ServiceNcdnsSidtypeReturnCode
+Var /GLOBAL ServiceNcdnsDescriptionReturnCode
+Var /GLOBAL ServiceNcdnsPrivsReturnCode
+Var /GLOBAL ServiceNcdnsStartReturnCode
 Var /GLOBAL CoreCookieDirReturnCode
 Var /GLOBAL CoreCookieFileReturnCode
 Var /GLOBAL EtcReturnCode
@@ -498,7 +498,7 @@ Section "ncdns" Sec_ncdns
   Call DNSSECTrigger
   Call NamecoinCoreConfig
   Call NamecoinCore
-  Call Service
+  Call ServiceNcdns
   Call Files
   Call FilesConfig
   Call BitcoinJ
@@ -506,8 +506,8 @@ Section "ncdns" Sec_ncdns
   Call FilesSecurePre
   Call KeyConfig
   Call FilesSecure
-  Call ServiceEventLog
-  Call ServiceStart
+  Call ServiceNcdnsEventLog
+  Call ServiceNcdnsStart
   Call UnboundConfig
 
   AddSize 12288  # Disk space estimation.
@@ -519,7 +519,7 @@ SectionEnd
 Section "Uninstall"
   Call un.UnboundConfig
   Call un.TrustConfig
-  Call un.Service
+  Call un.ServiceNcdns
   Call un.Files
   Call un.NamecoinCore
   Call un.BitcoinJ
@@ -1058,35 +1058,35 @@ FunctionEnd
 
 # SERVICE INSTALLATION/UNINSTALLATION
 ##############################################################################
-Function Service
+Function ServiceNcdns
   nsExec::ExecToLog 'sc create ncdns binPath= "ncdns.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "ncdns"'
-  Pop $ServiceCreateReturnCode
-  ${If} $ServiceCreateReturnCode != 0
-    DetailPrint "Failed to create ncdns service: return code $ServiceCreateReturnCode"
+  Pop $ServiceNcdnsCreateReturnCode
+  ${If} $ServiceNcdnsCreateReturnCode != 0
+    DetailPrint "Failed to create ncdns service: return code $ServiceNcdnsCreateReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to create ncdns service." /SD IDOK
     Abort
   ${EndIf}
   # Use service SID.
   nsExec::ExecToLog 'sc sidtype ncdns restricted'
-  Pop $ServiceSidtypeReturnCode
-  ${If} $ServiceSidtypeReturnCode != 0
-    DetailPrint "Failed to restrict ncdns service: return code $ServiceSidtypeReturnCode"
+  Pop $ServiceNcdnsSidtypeReturnCode
+  ${If} $ServiceNcdnsSidtypeReturnCode != 0
+    DetailPrint "Failed to restrict ncdns service: return code $ServiceNcdnsSidtypeReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to restrict ncdns service." /SD IDOK
     Abort
   ${EndIf}
   nsExec::ExecToLog 'sc description ncdns "Namecoin ncdns daemon"'
-  Pop $ServiceDescriptionReturnCode
-  ${If} $ServiceDescriptionReturnCode != 0
-    DetailPrint "Failed to set description on ncdns service: return code $ServiceDescriptionReturnCode"
+  Pop $ServiceNcdnsDescriptionReturnCode
+  ${If} $ServiceNcdnsDescriptionReturnCode != 0
+    DetailPrint "Failed to set description on ncdns service: return code $ServiceNcdnsDescriptionReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set description on ncdns service." /SD IDOK
     Abort
   ${EndIf}
   # Restrict privileges. 'sc privs' interprets an empty list as meaning no
   # privilege restriction... this one seems low-risk.
   nsExec::ExecToLog 'sc privs ncdns "SeChangeNotifyPrivilege"'
-  Pop $ServicePrivsReturnCode
-  ${If} $ServicePrivsReturnCode != 0
-    DetailPrint "Failed to set privileges on ncdns service: return code $ServicePrivsReturnCode"
+  Pop $ServiceNcdnsPrivsReturnCode
+  ${If} $ServiceNcdnsPrivsReturnCode != 0
+    DetailPrint "Failed to set privileges on ncdns service: return code $ServiceNcdnsPrivsReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set privileges on ncdns service." /SD IDOK
     Abort
   ${EndIf}
@@ -1095,23 +1095,23 @@ Function Service
   WriteRegStr HKLM "System\CurrentControlSet\Services\ncdns" "ImagePath" '"$INSTDIR\bin\ncdns.exe" "-conf=$INSTDIR\etc\ncdns.conf"'
 FunctionEnd
 
-Function ServiceEventLog
+Function ServiceNcdnsEventLog
   WriteRegStr HKLM "System\CurrentControlSet\Services\EventLog\Application\ncdns" "EventMessageFile" "%SystemRoot%\System32\EventCreate.exe"
   # 7 == Error | Warning | Info
   WriteRegDWORD HKLM "System\CurrentControlSet\Services\EventLog\Application\ncdns" "TypesSupported" 7
 FunctionEnd
 
-Function ServiceStart
+Function ServiceNcdnsStart
   nsExec::ExecToLog 'net start ncdns'
-  Pop $ServiceStartReturnCode
-  ${If} $ServiceStartReturnCode != 0
-    DetailPrint "Failed to start ncdns service: return code $ServiceStartReturnCode"
+  Pop $ServiceNcdnsStartReturnCode
+  ${If} $ServiceNcdnsStartReturnCode != 0
+    DetailPrint "Failed to start ncdns service: return code $ServiceNcdnsStartReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to start ncdns service." /SD IDOK
     Abort
   ${EndIf}
 FunctionEnd
 
-Function un.Service
+Function un.ServiceNcdns
   nsExec::Exec 'net stop ncdns'
   nsExec::ExecToLog 'sc delete ncdns'
 FunctionEnd
@@ -1215,19 +1215,21 @@ Function TrustConfig
   ${EndIf}
 
   Call TrustNameConstraintsConfig
+  Call TrustEncayaConfig
   Call TrustInjectionConfig
 
   DetailPrint "*** CryptoAPI HTTPS support was configured."
 FunctionEnd
 
 Function un.TrustConfig
+  Call un.TrustEncayaConfig
   Call un.TrustInjectionConfig
 FunctionEnd
 
 Function PromptCryptoAPI
   # Prompt user.
   # TODO: Add to documentation: "The install script parses network-supplied data and is not yet sandboxed.  The install script will overwrite any existing Name Constraints properties that have been applied to certificates (though this is unlikely to be a problem, since we believe Namecoin is the only software that uses Name Constraints properties).  There may be edge cases (especially in poorly coded web browsers) where a malicious certificate signed by a compromised public non-Namecoin CA could still be accepted for Namecoin websites."
-  MessageBox MB_ICONQUESTION|MB_YESNO "ncdns can enable HTTPS for Namecoin websites in web browsers that use Windows for certificate verification (i.e. most web browsers that are not Mozilla-based).  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any previously-untrusted certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).$\n$\nThe HTTPS support is not yet foolproof!  See documentation for details.$\n$\nWould you like to enable HTTPS for Namecoin websites?" /SD IDNO IDYES chose_yes IDNO chose_no
+  MessageBox MB_ICONQUESTION|MB_YESNO "ncdns can enable HTTPS for Namecoin websites in web browsers that use Windows for certificate verification (i.e. most web browsers that are not Mozilla-based).  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any previously-untrusted certificate authorities to Windows, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).$\n$\nThe HTTPS support is not yet foolproof!  See documentation for details.$\n$\nWould you like to enable HTTPS for Namecoin websites?" /SD IDYES IDYES chose_yes IDNO chose_no
 
 chose_no:
   DetailPrint "*** User elected not to configure CryptoAPI HTTPS"
@@ -1237,6 +1239,14 @@ chose_no:
 chose_yes:
   StrCpy $CrypoAPIRejected 0
   Return
+FunctionEnd
+
+Function TrustEncayaConfig
+  File /oname=$INSTDIR\bin\encaya.exe ${ARTIFACTS}\encaya.exe
+FunctionEnd
+
+Function un.TrustEncayaConfig
+  Delete $INSTDIR\bin\encaya.exe
 FunctionEnd
 
 Function TrustNameConstraintsConfig
