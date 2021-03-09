@@ -1243,10 +1243,16 @@ FunctionEnd
 
 Function TrustEncayaConfig
   File /oname=$INSTDIR\bin\encaya.exe ${ARTIFACTS}\encaya.exe
+  CreateDirectory $INSTDIR\etc\encaya.conf.d
+  File /oname=$INSTDIR\etc\encaya.conf.d\encaya.conf ${NEUTRAL_ARTIFACTS}\encaya.conf.d\encaya.conf
+  File /oname=$INSTDIR\etc\encaya.conf.d\xlog.conf ${NEUTRAL_ARTIFACTS}\encaya.conf.d\xlog.conf
 FunctionEnd
 
 Function un.TrustEncayaConfig
   Delete $INSTDIR\bin\encaya.exe
+  Delete $INSTDIR\etc\encaya.conf.d\encaya.conf
+  Delete $INSTDIR\etc\encaya.conf.d\xlog.conf
+  RMDir $INSTDIR\etc\encaya.conf.d
 FunctionEnd
 
 Function TrustNameConstraintsConfig
