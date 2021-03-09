@@ -114,6 +114,11 @@ Var /GLOBAL ServiceNcdnsSidtypeReturnCode
 Var /GLOBAL ServiceNcdnsDescriptionReturnCode
 Var /GLOBAL ServiceNcdnsPrivsReturnCode
 Var /GLOBAL ServiceNcdnsStartReturnCode
+Var /GLOBAL ServiceEncayaCreateReturnCode
+Var /GLOBAL ServiceEncayaSidtypeReturnCode
+Var /GLOBAL ServiceEncayaDescriptionReturnCode
+Var /GLOBAL ServiceEncayaPrivsReturnCode
+Var /GLOBAL ServiceEncayaStartReturnCode
 Var /GLOBAL CoreCookieDirReturnCode
 Var /GLOBAL CoreCookieFileReturnCode
 Var /GLOBAL EtcReturnCode
@@ -126,6 +131,14 @@ Var /GLOBAL EtcZskPubReturnCode
 Var /GLOBAL EtcKskReturnCode
 Var /GLOBAL EtcKskPrivReturnCode
 Var /GLOBAL EtcKskPubReturnCode
+Var /GLOBAL EtcEncayaReturnCode
+Var /GLOBAL EtcEncayaConfDReturnCode
+Var /GLOBAL EtcEncayaConfReturnCode
+Var /GLOBAL EtcEncayaConfXlogReturnCode
+Var /GLOBAL EtcEncayaRootKeyReturnCode
+Var /GLOBAL EtcEncayaListenChainReturnCode
+Var /GLOBAL EtcEncayaListenKeyReturnCode
+Var /GLOBAL EtcEncayaRootCertReturnCode
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -503,12 +516,17 @@ Section "ncdns" Sec_ncdns
   Call FilesConfig
   Call BitcoinJ
   Call TrustConfig
+  Call ServiceEncaya
   Call FilesSecurePre
   Call KeyConfigDNSSEC
-  Call KeyConfigEncaya
   Call FilesSecure
+  Call FilesSecureEncayaPre
+  Call KeyConfigEncaya
+  Call FilesSecureEncaya
   Call ServiceNcdnsEventLog
   Call ServiceNcdnsStart
+  Call ServiceEncayaEventLog
+  Call ServiceEncayaStart
   Call UnboundConfig
 
   AddSize 12288  # Disk space estimation.
@@ -521,6 +539,7 @@ Section "Uninstall"
   Call un.UnboundConfig
   Call un.TrustConfig
   Call un.ServiceNcdns
+  Call un.ServiceEncaya
   Call un.Files
   Call un.NamecoinCore
   Call un.BitcoinJ
@@ -609,6 +628,7 @@ FunctionEnd
 Function un.Reg
   DeleteRegKey HKLM "Software\Namecoin\ncdns"
   DeleteRegKey HKLM "System\CurrentControlSet\Services\EventLog\Application\ncdns"
+  DeleteRegKey HKLM "System\CurrentControlSet\Services\EventLog\Application\encaya"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns"
 FunctionEnd
 
@@ -1009,6 +1029,80 @@ Function FilesSecure
   ${EndIf}
 FunctionEnd
 
+Function FilesSecureEncayaPre
+  ${If} $CrypoAPIRejected = 1
+    DetailPrint "*** Skipping Encaya filesystem permissions because CryptoAPI HTTPS support was rejected."
+    Return
+  ${EndIf}
+
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya" /inheritance:r /T /grant "NT SERVICE\encaya:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+  Pop $EtcEncayaReturnCode
+  ${If} $EtcEncayaReturnCode != 0
+    DetailPrint "Failed to set ACL on etc_encaya: return code $EtcEncayaReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on etc_encaya." /SD IDOK
+    Abort
+  ${EndIf}
+FunctionEnd
+
+Function FilesSecureEncaya
+  ${If} $CrypoAPIRejected = 1
+    DetailPrint "*** Skipping Encaya filesystem permissions because CryptoAPI HTTPS support was rejected."
+    Return
+  ${EndIf}
+
+  # Ensure only encaya service and administrators can read encaya.conf.
+  Call FilesSecurePre
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\encaya.conf.d" /reset'
+  Pop $EtcEncayaConfDReturnCode
+  ${If} $EtcEncayaConfDReturnCode != 0
+    DetailPrint "Failed to set ACL on encaya config dir: return code $EtcEncayaConfDReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya config dir." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\encaya.conf.d\encaya.conf" /reset'
+  Pop $EtcEncayaConfReturnCode
+  ${If} $EtcEncayaConfReturnCode != 0
+    DetailPrint "Failed to set ACL on encaya config: return code $EtcEncayaConfReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya config." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\encaya.conf.d\xlog.conf" /reset'
+  Pop $EtcEncayaConfXlogReturnCode
+  ${If} $EtcEncayaConfXlogReturnCode != 0
+    DetailPrint "Failed to set ACL on encaya xlog config: return code $EtcEncayaConfXlogReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya xlog config." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\root_key.pem" /reset'
+  Pop $EtcEncayaRootKeyReturnCode
+  ${If} $EtcEncayaRootKeyReturnCode != 0
+    DetailPrint "Failed to set ACL on encaya root key: return code $EtcEncayaRootKeyReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya root key." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\listen_chain.pem" /reset'
+  Pop $EtcEncayaListenChainReturnCode
+  ${If} $EtcEncayaListenChainReturnCode != 0
+    DetailPrint "Failed to set ACL on encaya listen chain: return code $EtcEncayaListenChainReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya listen chain." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\listen_key.pem" /reset'
+  Pop $EtcEncayaListenKeyReturnCode
+  ${If} $EtcEncayaListenKeyReturnCode != 0
+    DetailPrint "Failed to set ACL on encaya listen key: return code $EtcEncayaListenKeyReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya listen key." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'icacls "$INSTDIR\encaya.pem" /reset'
+  Pop $EtcEncayaRootCertReturnCode
+  ${If} $EtcEncayaRootCertReturnCode != 0
+    DetailPrint "Failed to set ACL on KSK public key: return code $EtcEncayaRootCertReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya root certificate." /SD IDOK
+    Abort
+  ${EndIf}
+FunctionEnd
+
 Function un.Files
   Delete $INSTDIR\bin\ncdns.exe
   Delete $INSTDIR\bin\ncdt.exe
@@ -1067,7 +1161,7 @@ Function KeyConfigEncaya
 
   DetailPrint "Generating Encaya key..."
   FileOpen $4 "$PLUGINSDIR\keyconfig_encaya.cmd" w
-  FileWrite $4 '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc\encaya.conf" -encaya.generatecerts=true'
+  FileWrite $4 '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc_encaya\encaya.conf" -encaya.generatecerts=true'
   FileClose $4
   nsExec::ExecToLog '$PLUGINSDIR\keyconfig_encaya.cmd'
   Delete $PLUGINSDIR\keyconfigencaya.cmd
@@ -1132,6 +1226,79 @@ FunctionEnd
 Function un.ServiceNcdns
   nsExec::Exec 'net stop ncdns'
   nsExec::ExecToLog 'sc delete ncdns'
+FunctionEnd
+
+Function ServiceEncaya
+  ${If} $CrypoAPIRejected = 1
+    DetailPrint "*** Skipping Encaya key service creation because CryptoAPI HTTPS support was rejected."
+    Return
+  ${EndIf}
+
+  nsExec::ExecToLog 'sc create encaya binPath= "encaya.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "encaya"'
+  Pop $ServiceEncayaCreateReturnCode
+  ${If} $ServiceEncayaCreateReturnCode != 0
+    DetailPrint "Failed to create encaya service: return code $ServiceEncayaCreateReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to create encaya service." /SD IDOK
+    Abort
+  ${EndIf}
+  # Use service SID.
+  nsExec::ExecToLog 'sc sidtype encaya restricted'
+  Pop $ServiceEncayaSidtypeReturnCode
+  ${If} $ServiceEncayaSidtypeReturnCode != 0
+    DetailPrint "Failed to restrict encaya service: return code $ServiceEncayaSidtypeReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to restrict encaya service." /SD IDOK
+    Abort
+  ${EndIf}
+  nsExec::ExecToLog 'sc description encaya "Namecoin AIA daemon"'
+  Pop $ServiceEncayaDescriptionReturnCode
+  ${If} $ServiceEncayaDescriptionReturnCode != 0
+    DetailPrint "Failed to set description on encaya service: return code $ServiceEncayaDescriptionReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set description on encaya service." /SD IDOK
+    Abort
+  ${EndIf}
+  # Restrict privileges. 'sc privs' interprets an empty list as meaning no
+  # privilege restriction... this one seems low-risk.
+  nsExec::ExecToLog 'sc privs encaya "SeChangeNotifyPrivilege"'
+  Pop $ServiceEncayaPrivsReturnCode
+  ${If} $ServiceEncayaPrivsReturnCode != 0
+    DetailPrint "Failed to set privileges on encaya service: return code $ServiceEncayaPrivsReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set privileges on encaya service." /SD IDOK
+    Abort
+  ${EndIf}
+  # Set the proper image path manually rather than try to escape it properly
+  # above.
+  WriteRegStr HKLM "System\CurrentControlSet\Services\encaya" "ImagePath" '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc_encaya\encaya.conf"'
+FunctionEnd
+
+Function ServiceEncayaEventLog
+  ${If} $CrypoAPIRejected = 1
+    DetailPrint "*** Skipping Encaya event log registration because CryptoAPI HTTPS support was rejected."
+    Return
+  ${EndIf}
+
+  WriteRegStr HKLM "System\CurrentControlSet\Services\EventLog\Application\encaya" "EventMessageFile" "%SystemRoot%\System32\EventCreate.exe"
+  # 7 == Error | Warning | Info
+  WriteRegDWORD HKLM "System\CurrentControlSet\Services\EventLog\Application\encaya" "TypesSupported" 7
+FunctionEnd
+
+Function ServiceEncayaStart
+  ${If} $CrypoAPIRejected = 1
+    DetailPrint "*** Skipping Encaya service start because CryptoAPI HTTPS support was rejected."
+    Return
+  ${EndIf}
+
+  nsExec::ExecToLog 'net start encaya'
+  Pop $ServiceEncayaStartReturnCode
+  ${If} $ServiceEncayaStartReturnCode != 0
+    DetailPrint "Failed to start encaya service: return code $ServiceEncayaStartReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to start encaya service." /SD IDOK
+    Abort
+  ${EndIf}
+FunctionEnd
+
+Function un.ServiceEncaya
+  nsExec::ExecToLog 'net stop encaya'
+  nsExec::ExecToLog 'sc delete encaya'
 FunctionEnd
 
 
@@ -1261,23 +1428,24 @@ FunctionEnd
 
 Function TrustEncayaConfig
   File /oname=$INSTDIR\bin\encaya.exe ${ARTIFACTS}\encaya.exe
-  CreateDirectory $INSTDIR\etc\encaya.conf.d
-  File /oname=$INSTDIR\etc\encaya.conf.d\encaya.conf ${NEUTRAL_ARTIFACTS}\encaya.conf.d\encaya.conf
-  File /oname=$INSTDIR\etc\encaya.conf.d\xlog.conf ${NEUTRAL_ARTIFACTS}\encaya.conf.d\xlog.conf
+  CreateDirectory $INSTDIR\etc_encaya
+  CreateDirectory $INSTDIR\etc_encaya\encaya.conf.d
+  File /oname=$INSTDIR\etc_encaya\encaya.conf.d\encaya.conf ${NEUTRAL_ARTIFACTS}\encaya.conf.d\encaya.conf
+  File /oname=$INSTDIR\etc_encaya\encaya.conf.d\xlog.conf ${NEUTRAL_ARTIFACTS}\encaya.conf.d\xlog.conf
 FunctionEnd
 
 Function un.TrustEncayaConfig
   # Encaya main files
   Delete $INSTDIR\bin\encaya.exe
-  Delete $INSTDIR\etc\encaya.conf.d\encaya.conf
-  Delete $INSTDIR\etc\encaya.conf.d\xlog.conf
-  RMDir $INSTDIR\etc\encaya.conf.d
+  Delete $INSTDIR\etc_encaya\encaya.conf.d\encaya.conf
+  Delete $INSTDIR\etc_encaya\encaya.conf.d\xlog.conf
+  RMDir $INSTDIR\etc_encaya\encaya.conf.d
 
   # Encaya keys
-  Delete $INSTDIR\etc\encaya\root_key.pem
-  Delete $INSTDIR\etc\encaya\listen_chain.pem
-  Delete $INSTDIR\etc\encaya\listen_key.pem
-  RMDir $INSTDIR\etc\encaya
+  Delete $INSTDIR\etc_encaya\root_key.pem
+  Delete $INSTDIR\etc_encaya\listen_chain.pem
+  Delete $INSTDIR\etc_encaya\listen_key.pem
+  RMDir $INSTDIR\etc_encaya
   Delete $INSTDIR\encaya.pem
 FunctionEnd
 
