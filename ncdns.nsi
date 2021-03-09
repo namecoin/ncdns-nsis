@@ -504,7 +504,7 @@ Section "ncdns" Sec_ncdns
   Call BitcoinJ
   Call TrustConfig
   Call FilesSecurePre
-  Call KeyConfig
+  Call KeyConfigDNSSEC
   Call FilesSecure
   Call ServiceNcdnsEventLog
   Call ServiceNcdnsStart
@@ -1043,7 +1043,7 @@ FunctionEnd
 
 # FILE INSTALLATION/UNINSTALLATION
 ##############################################################################
-Function KeyConfig
+Function KeyConfigDNSSEC
   DetailPrint "Generating DNSSEC key..."
   File /oname=$PLUGINSDIR\keyconfig.ps1 keyconfig.ps1
   FileOpen $4 "$PLUGINSDIR\keyconfig.cmd" w
