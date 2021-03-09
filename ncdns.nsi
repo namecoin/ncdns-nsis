@@ -523,6 +523,7 @@ Section "ncdns" Sec_ncdns
   Call FilesSecureEncayaPre
   Call KeyConfigEncaya
   Call FilesSecureEncaya
+  Call CertInjectEncaya
   Call ServiceNcdnsEventLog
   Call ServiceNcdnsStart
   Call ServiceEncayaEventLog
@@ -1447,6 +1448,20 @@ Function un.TrustEncayaConfig
   Delete $INSTDIR\etc_encaya\listen_key.pem
   RMDir $INSTDIR\etc_encaya
   Delete $INSTDIR\encaya.pem
+FunctionEnd
+
+Function CertInjectEncaya
+  # TODO: Delete Encaya cert from trust store when uninstalling
+  File /oname=$PLUGINSDIR\certinject.exe ${ARTIFACTS}\certinject.exe
+
+  DetailPrint "*** Configuring Encaya trust"
+  FileOpen $4 "$PLUGINSDIR\certinject-encaya.cmd" w
+  FileWrite $4 '"$PLUGINSDIR\certinject.exe" -capi.physical-store=enterprise -capi.logical-store=Root "-certinject.cert=$INSTDIR\encaya.pem" -certstore.cryptoapi -eku.server -nc.permitted-dns=$ETLD'
+  FileClose $4
+  nsExec::ExecToLog '"$PLUGINSDIR\certinject-encaya.cmd"'
+  Delete $PLUGINSDIR\certinject-encaya.cmd
+
+  Delete $PLUGINSDIR\certinject.exe
 FunctionEnd
 
 Function TrustNameConstraintsConfig
