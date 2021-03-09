@@ -1044,16 +1044,7 @@ Function FilesSecureEncayaPre
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on etc_encaya." /SD IDOK
     Abort
   ${EndIf}
-FunctionEnd
 
-Function FilesSecureEncaya
-  ${If} $CrypoAPIRejected = 1
-    DetailPrint "*** Skipping Encaya filesystem permissions because CryptoAPI HTTPS support was rejected."
-    Return
-  ${EndIf}
-
-  # Ensure only encaya service and administrators can read encaya.conf.
-  Call FilesSecurePre
   nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\encaya.conf.d" /reset'
   Pop $EtcEncayaConfDReturnCode
   ${If} $EtcEncayaConfDReturnCode != 0
@@ -1075,6 +1066,16 @@ Function FilesSecureEncaya
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya xlog config." /SD IDOK
     Abort
   ${EndIf}
+FunctionEnd
+
+Function FilesSecureEncaya
+  ${If} $CrypoAPIRejected = 1
+    DetailPrint "*** Skipping Encaya filesystem permissions because CryptoAPI HTTPS support was rejected."
+    Return
+  ${EndIf}
+
+  # Ensure only encaya service and administrators can read encaya.conf.
+  Call FilesSecureEncayaPre
   nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\root_key.pem" /reset'
   Pop $EtcEncayaRootKeyReturnCode
   ${If} $EtcEncayaRootKeyReturnCode != 0
