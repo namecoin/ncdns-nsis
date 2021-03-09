@@ -139,6 +139,7 @@ Var /GLOBAL EtcEncayaRootKeyReturnCode
 Var /GLOBAL EtcEncayaListenChainReturnCode
 Var /GLOBAL EtcEncayaListenKeyReturnCode
 Var /GLOBAL EtcEncayaRootCertReturnCode
+Var /GLOBAL KeyEncayaReturnCode
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -1161,11 +1162,13 @@ Function KeyConfigEncaya
   ${EndIf}
 
   DetailPrint "Generating Encaya key..."
-  FileOpen $4 "$PLUGINSDIR\keyconfig_encaya.cmd" w
-  FileWrite $4 '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc_encaya\encaya.conf" -encaya.generatecerts=true'
-  FileClose $4
-  nsExec::ExecToLog '$PLUGINSDIR\keyconfig_encaya.cmd'
-  Delete $PLUGINSDIR\keyconfigencaya.cmd
+  nsExec::ExecToLog '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc_encaya\encaya.conf" -encaya.generatecerts=true'
+  Pop $KeyEncayaReturnCode
+  ${If} $KeyEncayaReturnCode != 0
+    DetailPrint "Failed to generate encaya key: return code $KeyEncayaReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to generate encaya key." /SD IDOK
+    Abort
+  ${EndIf}
 FunctionEnd
 
 
