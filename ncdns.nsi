@@ -505,6 +505,7 @@ Section "ncdns" Sec_ncdns
   Call TrustConfig
   Call FilesSecurePre
   Call KeyConfigDNSSEC
+  Call KeyConfigEncaya
   Call FilesSecure
   Call ServiceNcdnsEventLog
   Call ServiceNcdnsStart
@@ -1056,6 +1057,23 @@ Function KeyConfigDNSSEC
 FunctionEnd
 
 
+# FILE INSTALLATION/UNINSTALLATION
+##############################################################################
+Function KeyConfigEncaya
+  ${If} $CrypoAPIRejected = 1
+    DetailPrint "*** Skipping Encaya key generation because CryptoAPI HTTPS support was rejected."
+    Return
+  ${EndIf}
+
+  DetailPrint "Generating Encaya key..."
+  FileOpen $4 "$PLUGINSDIR\keyconfig_encaya.cmd" w
+  FileWrite $4 '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc\encaya.conf" -encaya.generatecerts=true'
+  FileClose $4
+  nsExec::ExecToLog '$PLUGINSDIR\keyconfig_encaya.cmd'
+  Delete $PLUGINSDIR\keyconfigencaya.cmd
+FunctionEnd
+
+
 # SERVICE INSTALLATION/UNINSTALLATION
 ##############################################################################
 Function ServiceNcdns
@@ -1249,10 +1267,18 @@ Function TrustEncayaConfig
 FunctionEnd
 
 Function un.TrustEncayaConfig
+  # Encaya main files
   Delete $INSTDIR\bin\encaya.exe
   Delete $INSTDIR\etc\encaya.conf.d\encaya.conf
   Delete $INSTDIR\etc\encaya.conf.d\xlog.conf
   RMDir $INSTDIR\etc\encaya.conf.d
+
+  # Encaya keys
+  Delete $INSTDIR\etc\encaya\root_key.pem
+  Delete $INSTDIR\etc\encaya\listen_chain.pem
+  Delete $INSTDIR\etc\encaya\listen_key.pem
+  RMDir $INSTDIR\etc\encaya
+  Delete $INSTDIR\encaya.pem
 FunctionEnd
 
 Function TrustNameConstraintsConfig
