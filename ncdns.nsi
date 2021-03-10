@@ -30,6 +30,8 @@ SetCompressor /SOLID lzma
 
 !include "components-dialog.nsdinc"
 
+!include "exectolog.nsh"
+
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom ComponentDialogCreate ComponentDialogLeave
@@ -738,14 +740,14 @@ haveDataDir:
 
   # Configure cookie directory.
   CreateDirectory C:\ProgramData\NamecoinCookie
-  nsExec::ExecToLog 'icacls "C:\ProgramData\NamecoinCookie" /inheritance:r /T /grant "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" "Users:(OI)(CI)F"'
+  ${ExecToLog} 'icacls "C:\ProgramData\NamecoinCookie" /inheritance:r /T /grant "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" "Users:(OI)(CI)F"'
   Pop $CoreCookieDirReturnCode
   ${If} $CoreCookieDirReturnCode != 0
     DetailPrint "Failed to set ACL on Namecoin Core cookie directory: return code $CoreCookieDirReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on Namecoin Core cookie directory." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "C:\ProgramData\NamecoinCookie\.cookie" /reset'
+  ${ExecToLog} 'icacls "C:\ProgramData\NamecoinCookie\.cookie" /reset'
   Pop $CoreCookieFileReturnCode
   # The cookie file might not exist, which will yield return code 2.
   # See https://github.com/MicrosoftDocs/windowsserverdocs/issues/3303
@@ -765,7 +767,7 @@ haveDataDir:
   FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\confignamecoinconf.ps1" '
   FileWrite $4 '"$NamecoinCoreDataDir" < nul'
   FileClose $4
-  nsExec::ExecToLog '$PLUGINSDIR\confignamecoinconf.cmd'
+  ${ExecToLog} '$PLUGINSDIR\confignamecoinconf.cmd'
   Delete $PLUGINSDIR\confignamecoinconf.ps1
   Delete $PLUGINSDIR\confignamecoinconf.cmd
 
@@ -954,7 +956,7 @@ Function FilesConfig
 FunctionEnd
 
 Function FilesSecurePre
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+  ${ExecToLog} 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
   Pop $EtcReturnCode
   ${If} $EtcReturnCode != 0
     DetailPrint "Failed to set ACL on etc: return code $EtcReturnCode"
@@ -966,63 +968,63 @@ FunctionEnd
 Function FilesSecure
   # Ensure only ncdns service and administrators can read ncdns.conf.
   Call FilesSecurePre
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc\ncdns.conf" /reset'
   Pop $EtcConfReturnCode
   ${If} $EtcConfReturnCode != 0
     DetailPrint "Failed to set ACL on ncdns config: return code $EtcConfReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns config." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf.d" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc\ncdns.conf.d" /reset'
   Pop $EtcConfDReturnCode
   ${If} $EtcConfDReturnCode != 0
     DetailPrint "Failed to set ACL on ncdns config dir: return code $EtcConfDReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns config dir." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ncdns.conf.d\xlog.conf" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc\ncdns.conf.d\xlog.conf" /reset'
   Pop $EtcConfXlogReturnCode
   ${If} $EtcConfXlogReturnCode != 0
     DetailPrint "Failed to set ACL on ncdns xlog config: return code $EtcConfXlogReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns xlog config." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc\zsk" /reset'
   Pop $EtcZskReturnCode
   ${If} $EtcZskReturnCode != 0
     DetailPrint "Failed to set ACL on ZSK directory: return code $EtcZskReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ZSK directory." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.private" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc\zsk\bit.private" /reset'
   Pop $EtcZskPrivReturnCode
   ${If} $EtcZskPrivReturnCode != 0
     DetailPrint "Failed to set ACL on ZSK private key: return code $EtcZskPrivReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ZSK private key." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\zsk\bit.key" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc\zsk\bit.key" /reset'
   Pop $EtcZskPubReturnCode
   ${If} $EtcZskPubReturnCode != 0
     DetailPrint "Failed to set ACL on ZSK public key: return code $EtcZskPubReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ZSK public key." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ksk" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc\ksk" /reset'
   Pop $EtcKskReturnCode
   ${If} $EtcKskReturnCode != 0
     DetailPrint "Failed to set ACL on KSK directory: return code $EtcKskReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on KSK directory." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc\ksk\bit.private" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc\ksk\bit.private" /reset'
   Pop $EtcKskPrivReturnCode
   ${If} $EtcKskPrivReturnCode != 0
     DetailPrint "Failed to set ACL on KSK private key: return code $EtcKskPrivReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on KSK private key." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\bit.key" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\bit.key" /reset'
   Pop $EtcKskPubReturnCode
   ${If} $EtcKskPubReturnCode != 0
     DetailPrint "Failed to set ACL on KSK public key: return code $EtcKskPubReturnCode"
@@ -1037,7 +1039,7 @@ Function FilesSecureEncayaPre
     Return
   ${EndIf}
 
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya" /inheritance:r /T /grant "NT SERVICE\encaya:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya" /inheritance:r /T /grant "NT SERVICE\encaya:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
   Pop $EtcEncayaReturnCode
   ${If} $EtcEncayaReturnCode != 0
     DetailPrint "Failed to set ACL on etc_encaya: return code $EtcEncayaReturnCode"
@@ -1045,21 +1047,21 @@ Function FilesSecureEncayaPre
     Abort
   ${EndIf}
 
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\encaya.conf.d" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya\encaya.conf.d" /reset'
   Pop $EtcEncayaConfDReturnCode
   ${If} $EtcEncayaConfDReturnCode != 0
     DetailPrint "Failed to set ACL on encaya config dir: return code $EtcEncayaConfDReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya config dir." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\encaya.conf.d\encaya.conf" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya\encaya.conf.d\encaya.conf" /reset'
   Pop $EtcEncayaConfReturnCode
   ${If} $EtcEncayaConfReturnCode != 0
     DetailPrint "Failed to set ACL on encaya config: return code $EtcEncayaConfReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya config." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\encaya.conf.d\xlog.conf" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya\encaya.conf.d\xlog.conf" /reset'
   Pop $EtcEncayaConfXlogReturnCode
   ${If} $EtcEncayaConfXlogReturnCode != 0
     DetailPrint "Failed to set ACL on encaya xlog config: return code $EtcEncayaConfXlogReturnCode"
@@ -1076,28 +1078,28 @@ Function FilesSecureEncaya
 
   # Ensure only encaya service and administrators can read encaya.conf.
   Call FilesSecureEncayaPre
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\root_key.pem" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya\root_key.pem" /reset'
   Pop $EtcEncayaRootKeyReturnCode
   ${If} $EtcEncayaRootKeyReturnCode != 0
     DetailPrint "Failed to set ACL on encaya root key: return code $EtcEncayaRootKeyReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya root key." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\listen_chain.pem" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya\listen_chain.pem" /reset'
   Pop $EtcEncayaListenChainReturnCode
   ${If} $EtcEncayaListenChainReturnCode != 0
     DetailPrint "Failed to set ACL on encaya listen chain: return code $EtcEncayaListenChainReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya listen chain." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\etc_encaya\listen_key.pem" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya\listen_key.pem" /reset'
   Pop $EtcEncayaListenKeyReturnCode
   ${If} $EtcEncayaListenKeyReturnCode != 0
     DetailPrint "Failed to set ACL on encaya listen key: return code $EtcEncayaListenKeyReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on encaya listen key." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'icacls "$INSTDIR\encaya.pem" /reset'
+  ${ExecToLog} 'icacls "$INSTDIR\encaya.pem" /reset'
   Pop $EtcEncayaRootCertReturnCode
   ${If} $EtcEncayaRootCertReturnCode != 0
     DetailPrint "Failed to set ACL on KSK public key: return code $EtcEncayaRootCertReturnCode"
@@ -1148,7 +1150,7 @@ Function KeyConfigDNSSEC
   FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\keyconfig.ps1" '
   FileWrite $4 '"$INSTDIR" < nul'
   FileClose $4
-  nsExec::ExecToLog '$PLUGINSDIR\keyconfig.cmd'
+  ${ExecToLog} '$PLUGINSDIR\keyconfig.cmd'
   Delete $PLUGINSDIR\keyconfig.ps1
   Delete $PLUGINSDIR\keyconfig.cmd
 FunctionEnd
@@ -1163,7 +1165,7 @@ Function KeyConfigEncaya
   ${EndIf}
 
   DetailPrint "Generating Encaya key..."
-  nsExec::ExecToLog '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc_encaya\encaya.conf" -encaya.generatecerts=true'
+  ${ExecToLog} '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc_encaya\encaya.conf" -encaya.generatecerts=true'
   Pop $KeyEncayaReturnCode
   ${If} $KeyEncayaReturnCode != 0
     DetailPrint "Failed to generate encaya key: return code $KeyEncayaReturnCode"
@@ -1176,7 +1178,7 @@ FunctionEnd
 # SERVICE INSTALLATION/UNINSTALLATION
 ##############################################################################
 Function ServiceNcdns
-  nsExec::ExecToLog 'sc create ncdns binPath= "ncdns.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "ncdns"'
+  ${ExecToLog} 'sc create ncdns binPath= "ncdns.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "ncdns"'
   Pop $ServiceNcdnsCreateReturnCode
   ${If} $ServiceNcdnsCreateReturnCode != 0
     DetailPrint "Failed to create ncdns service: return code $ServiceNcdnsCreateReturnCode"
@@ -1184,14 +1186,14 @@ Function ServiceNcdns
     Abort
   ${EndIf}
   # Use service SID.
-  nsExec::ExecToLog 'sc sidtype ncdns restricted'
+  ${ExecToLog} 'sc sidtype ncdns restricted'
   Pop $ServiceNcdnsSidtypeReturnCode
   ${If} $ServiceNcdnsSidtypeReturnCode != 0
     DetailPrint "Failed to restrict ncdns service: return code $ServiceNcdnsSidtypeReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to restrict ncdns service." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'sc description ncdns "Namecoin ncdns daemon"'
+  ${ExecToLog} 'sc description ncdns "Namecoin ncdns daemon"'
   Pop $ServiceNcdnsDescriptionReturnCode
   ${If} $ServiceNcdnsDescriptionReturnCode != 0
     DetailPrint "Failed to set description on ncdns service: return code $ServiceNcdnsDescriptionReturnCode"
@@ -1200,7 +1202,7 @@ Function ServiceNcdns
   ${EndIf}
   # Restrict privileges. 'sc privs' interprets an empty list as meaning no
   # privilege restriction... this one seems low-risk.
-  nsExec::ExecToLog 'sc privs ncdns "SeChangeNotifyPrivilege"'
+  ${ExecToLog} 'sc privs ncdns "SeChangeNotifyPrivilege"'
   Pop $ServiceNcdnsPrivsReturnCode
   ${If} $ServiceNcdnsPrivsReturnCode != 0
     DetailPrint "Failed to set privileges on ncdns service: return code $ServiceNcdnsPrivsReturnCode"
@@ -1219,7 +1221,7 @@ Function ServiceNcdnsEventLog
 FunctionEnd
 
 Function ServiceNcdnsStart
-  nsExec::ExecToLog 'net start ncdns'
+  ${ExecToLog} 'net start ncdns'
   Pop $ServiceNcdnsStartReturnCode
   ${If} $ServiceNcdnsStartReturnCode != 0
     DetailPrint "Failed to start ncdns service: return code $ServiceNcdnsStartReturnCode"
@@ -1230,7 +1232,7 @@ FunctionEnd
 
 Function un.ServiceNcdns
   nsExec::Exec 'net stop ncdns'
-  nsExec::ExecToLog 'sc delete ncdns'
+  ${ExecToLog} 'sc delete ncdns'
 FunctionEnd
 
 Function ServiceEncaya
@@ -1239,7 +1241,7 @@ Function ServiceEncaya
     Return
   ${EndIf}
 
-  nsExec::ExecToLog 'sc create encaya binPath= "encaya.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "encaya"'
+  ${ExecToLog} 'sc create encaya binPath= "encaya.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "encaya"'
   Pop $ServiceEncayaCreateReturnCode
   ${If} $ServiceEncayaCreateReturnCode != 0
     DetailPrint "Failed to create encaya service: return code $ServiceEncayaCreateReturnCode"
@@ -1247,14 +1249,14 @@ Function ServiceEncaya
     Abort
   ${EndIf}
   # Use service SID.
-  nsExec::ExecToLog 'sc sidtype encaya restricted'
+  ${ExecToLog} 'sc sidtype encaya restricted'
   Pop $ServiceEncayaSidtypeReturnCode
   ${If} $ServiceEncayaSidtypeReturnCode != 0
     DetailPrint "Failed to restrict encaya service: return code $ServiceEncayaSidtypeReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to restrict encaya service." /SD IDOK
     Abort
   ${EndIf}
-  nsExec::ExecToLog 'sc description encaya "Namecoin AIA daemon"'
+  ${ExecToLog} 'sc description encaya "Namecoin AIA daemon"'
   Pop $ServiceEncayaDescriptionReturnCode
   ${If} $ServiceEncayaDescriptionReturnCode != 0
     DetailPrint "Failed to set description on encaya service: return code $ServiceEncayaDescriptionReturnCode"
@@ -1263,7 +1265,7 @@ Function ServiceEncaya
   ${EndIf}
   # Restrict privileges. 'sc privs' interprets an empty list as meaning no
   # privilege restriction... this one seems low-risk.
-  nsExec::ExecToLog 'sc privs encaya "SeChangeNotifyPrivilege"'
+  ${ExecToLog} 'sc privs encaya "SeChangeNotifyPrivilege"'
   Pop $ServiceEncayaPrivsReturnCode
   ${If} $ServiceEncayaPrivsReturnCode != 0
     DetailPrint "Failed to set privileges on encaya service: return code $ServiceEncayaPrivsReturnCode"
@@ -1292,7 +1294,7 @@ Function ServiceEncayaStart
     Return
   ${EndIf}
 
-  nsExec::ExecToLog 'net start encaya'
+  ${ExecToLog} 'net start encaya'
   Pop $ServiceEncayaStartReturnCode
   ${If} $ServiceEncayaStartReturnCode != 0
     DetailPrint "Failed to start encaya service: return code $ServiceEncayaStartReturnCode"
@@ -1302,8 +1304,8 @@ Function ServiceEncayaStart
 FunctionEnd
 
 Function un.ServiceEncaya
-  nsExec::ExecToLog 'net stop encaya'
-  nsExec::ExecToLog 'sc delete encaya'
+  ${ExecToLog} 'net stop encaya'
+  ${ExecToLog} 'sc delete encaya'
 FunctionEnd
 
 
@@ -1342,7 +1344,7 @@ found2:
   # Unbound on Windows doesn't appear to support globbing include directives,
   # contrary to the documentation. So use this kludge instead.
   File /oname=$UnboundConfPath\rebuild-confd-list.cmd rebuild-confd-list.cmd
-  nsExec::ExecToLog '"$UnboundConfPath\rebuild-confd-list.cmd"'
+  ${ExecToLog} '"$UnboundConfPath\rebuild-confd-list.cmd"'
 
   # The configunbound.ps1 performs two functions:
   #   1. It ensures an appropriate include: line is added to unbound.conf.
@@ -1358,20 +1360,20 @@ found2:
   FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configunbound.ps1" '
   FileWrite $4 '"$UnboundConfPath" "$INSTDIR" < nul'
   FileClose $4
-  nsExec::ExecToLog '$PLUGINSDIR\configunbound.cmd'
+  ${ExecToLog} '$PLUGINSDIR\configunbound.cmd'
   Delete $PLUGINSDIR\configunbound.ps1
   Delete $PLUGINSDIR\configunbound.cmd
 
   # Add a config fragment in the newly configured directory.
   WriteRegStr HKLM "Software\Namecoin\ncdns" "UnboundFragmentLocation" "$UnboundConfPath\unbound.conf.d"
-  nsExec::ExecToLog '"$UnboundConfPath\rebuild-confd-list.cmd"'
+  ${ExecToLog} '"$UnboundConfPath\rebuild-confd-list.cmd"'
 
   # Windows, unbelievably, doesn't appear to have any way to restart a service
   # from the command line. stop followed by start isn't the same as a restart
   # because it doesn't restart dependencies automatically.
-  nsExec::ExecToLog 'net stop /yes unbound'
-  nsExec::ExecToLog 'net start unbound'
-  nsExec::ExecToLog 'net start dnssectrigger'
+  ${ExecToLog} 'net stop /yes unbound'
+  ${ExecToLog} 'net start unbound'
+  ${ExecToLog} 'net start dnssectrigger'
 FunctionEnd
 
 Function un.UnboundConfig
@@ -1382,11 +1384,11 @@ Function un.UnboundConfig
   # Delete the fragment which was installed, but do not deconfigure the
   # configuration directory.
   Delete $UnboundFragmentLocation\ncdns-inst.conf
-  nsExec::ExecToLog '"$UnboundFragmentLocation\..\rebuild-confd-list.cmd"'
+  ${ExecToLog} '"$UnboundFragmentLocation\..\rebuild-confd-list.cmd"'
 
-  nsExec::ExecToLog 'net stop /yes unbound'
-  nsExec::ExecToLog 'net start unbound'
-  nsExec::ExecToLog 'net start dnssectrigger'
+  ${ExecToLog} 'net stop /yes unbound'
+  ${ExecToLog} 'net start unbound'
+  ${ExecToLog} 'net start dnssectrigger'
 
 not_found:
 FunctionEnd
@@ -1462,7 +1464,7 @@ Function CertInjectEncaya
   FileOpen $4 "$PLUGINSDIR\certinject-encaya.cmd" w
   FileWrite $4 '"$PLUGINSDIR\certinject.exe" -capi.physical-store=enterprise -capi.logical-store=Root "-certinject.cert=$INSTDIR\encaya.pem" -certstore.cryptoapi -eku.server -nc.permitted-dns=$ETLD'
   FileClose $4
-  nsExec::ExecToLog '"$PLUGINSDIR\certinject-encaya.cmd"'
+  ${ExecToLog} '"$PLUGINSDIR\certinject-encaya.cmd"'
   Delete $PLUGINSDIR\certinject-encaya.cmd
 
   Delete $PLUGINSDIR\certinject.exe
@@ -1471,7 +1473,7 @@ FunctionEnd
 Function TrustNameConstraintsConfig
   DetailPrint "*** Extracting AuthRootWU"
   File /oname=$PLUGINSDIR\verifyctl.cmd verifyctl.cmd
-  nsExec::ExecToLog '"$PLUGINSDIR\verifyctl.cmd"'
+  ${ExecToLog} '"$PLUGINSDIR\verifyctl.cmd"'
   Delete $PLUGINSDIR\verifyctl.cmd
 
   File /oname=$PLUGINSDIR\certinject.exe ${ARTIFACTS}\certinject.exe
@@ -1480,14 +1482,14 @@ Function TrustNameConstraintsConfig
   FileOpen $4 "$PLUGINSDIR\certinject-root.cmd" w
   FileWrite $4 '"$PLUGINSDIR\certinject.exe" -capi.physical-store=system -capi.logical-store=Root -capi.all-certs -certstore.cryptoapi -nc.excluded-dns=$ETLD'
   FileClose $4
-  nsExec::ExecToLog '"$PLUGINSDIR\certinject-root.cmd"'
+  ${ExecToLog} '"$PLUGINSDIR\certinject-root.cmd"'
   Delete $PLUGINSDIR\certinject-root.cmd
 
   DetailPrint "*** Configuring name constraints: AuthRoot"
   FileOpen $4 "$PLUGINSDIR\certinject-authroot.cmd" w
   FileWrite $4 '"$PLUGINSDIR\certinject.exe" -capi.physical-store=system -capi.logical-store=AuthRoot -capi.all-certs -certstore.cryptoapi -nc.excluded-dns=$ETLD'
   FileClose $4
-  nsExec::ExecToLog '"$PLUGINSDIR\certinject-authroot.cmd"'
+  ${ExecToLog} '"$PLUGINSDIR\certinject-authroot.cmd"'
   Delete $PLUGINSDIR\certinject-authroot.cmd
 
   # TODO: Configure name constraints for enterprise and group policy too.
@@ -1503,7 +1505,7 @@ Function TrustInjectionConfig
   FileOpen $4 "$PLUGINSDIR\regpermrun.cmd" w
   FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\regpermrun.ps1" install < nul'
   FileClose $4
-  nsExec::ExecToLog '"$PLUGINSDIR\regpermrun.cmd"'
+  ${ExecToLog} '"$PLUGINSDIR\regpermrun.cmd"'
   Delete $PLUGINSDIR\regpermrun.cmd
   Delete $PLUGINSDIR\regpermrun.ps1
   Delete $PLUGINSDIR\regperm.ps1
@@ -1521,7 +1523,7 @@ Function un.TrustInjectionConfig
   FileOpen $4 "$PLUGINSDIR\regpermrun.cmd" w
   FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\regpermrun.ps1" uninstall < nul'
   FileClose $4
-  nsExec::ExecToLog '"$PLUGINSDIR\regpermrun.cmd"'
+  ${ExecToLog} '"$PLUGINSDIR\regpermrun.cmd"'
   Delete $PLUGINSDIR\regpermrun.cmd
   Delete $PLUGINSDIR\regpermrun.ps1
   Delete $PLUGINSDIR\regperm.ps1
