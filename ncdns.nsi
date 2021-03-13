@@ -1458,6 +1458,9 @@ Function un.TrustEncayaConfig
   Delete $INSTDIR\etc_encaya\listen_key.pem
   RMDir $INSTDIR\etc_encaya
   Delete $INSTDIR\encaya.pem
+
+  # Encaya root CA
+  ${ExecToLog} 'certutil -enterprise -delstore Root "Namecoin Root CA"'
 FunctionEnd
 
 Function CertInjectEncaya
