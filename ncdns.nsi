@@ -1164,14 +1164,18 @@ Function KeyConfigEncaya
     Return
   ${EndIf}
 
+  File /oname=$PLUGINSDIR\encayagen.exe ${ARTIFACTS}\encayagen.exe
+
   DetailPrint "Generating Encaya key..."
-  ${ExecToLog} '"$INSTDIR\bin\encaya.exe" "-conf=$INSTDIR\etc_encaya\encaya.conf" -encaya.generatecerts=true'
+  ${ExecToLog} '"$PLUGINSDIR\encayagen.exe" "-conf=$INSTDIR\etc_encaya\encaya.conf"'
   Pop $KeyEncayaReturnCode
   ${If} $KeyEncayaReturnCode != 0
     DetailPrint "Failed to generate encaya key: return code $KeyEncayaReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to generate encaya key." /SD IDOK
     Abort
   ${EndIf}
+
+  Delete $PLUGINSDIR\encayagen.exe
 FunctionEnd
 
 
