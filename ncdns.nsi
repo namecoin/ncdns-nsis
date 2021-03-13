@@ -544,6 +544,7 @@ Section "Uninstall"
   Call un.TrustConfig
   Call un.ServiceNcdns
   Call un.ServiceEncaya
+  Call un.TrustEncayaConfig
   Call un.Files
   Call un.NamecoinCore
   Call un.BitcoinJ
@@ -1418,7 +1419,6 @@ Function TrustConfig
 FunctionEnd
 
 Function un.TrustConfig
-  Call un.TrustEncayaConfig
   Call un.TrustInjectionConfig
 FunctionEnd
 
