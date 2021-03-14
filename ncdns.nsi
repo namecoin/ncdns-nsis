@@ -936,10 +936,10 @@ Function Files
 # makensis version I'm using. Bleh.
 #!endif
 
-  File /nonfatal /oname=$INSTDIR\bin\ncdt.exe ${ARTIFACTS}\ncdt.exe
-  File /nonfatal /oname=$INSTDIR\bin\ncdumpzone.exe ${ARTIFACTS}\ncdumpzone.exe
-  File /nonfatal /oname=$INSTDIR\bin\generate_nmc_cert.exe ${ARTIFACTS}\generate_nmc_cert.exe
-  File /nonfatal /oname=$INSTDIR\bin\q.exe ${ARTIFACTS}\q.exe
+  File /oname=$INSTDIR\bin\ncdt.exe ${ARTIFACTS}\ncdt.exe
+  File /oname=$INSTDIR\bin\ncdumpzone.exe ${ARTIFACTS}\ncdumpzone.exe
+  File /oname=$INSTDIR\bin\generate_nmc_cert.exe ${ARTIFACTS}\generate_nmc_cert.exe
+  File /oname=$INSTDIR\bin\q.exe ${ARTIFACTS}\q.exe
 FunctionEnd
 
 Function FilesConfig
