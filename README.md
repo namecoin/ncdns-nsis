@@ -11,9 +11,9 @@ Put the following files in `artifacts/`:
       `BIND{version}.xp.zip`.
   - dnssec_trigger_setup.exe
   - namecoin-win32-setup-unsigned.exe / namecoin-win64-setup-unsigned.exe
-
-  - Optionally, add `ncdt.exe` and `ncdumpzone.exe` from ncdns.
-  - `generate_nmc_cert.exe` and `q.exe` will also be copied if they are present.
+  - `ncdt.exe` and `ncdumpzone.exe` from ncdns
+  - `generate_nmc_cert.exe`
+  - `q.exe` from miekg/exdns
 
 Build flags:
 
