@@ -141,6 +141,7 @@ Var /GLOBAL EtcEncayaRootKeyReturnCode
 Var /GLOBAL EtcEncayaListenChainReturnCode
 Var /GLOBAL EtcEncayaListenKeyReturnCode
 Var /GLOBAL EtcEncayaRootCertReturnCode
+Var /GLOBAL KeyDNSSECReturnCode
 Var /GLOBAL KeyEncayaReturnCode
 
 # PRELAUNCH CHECKS
@@ -928,8 +929,10 @@ Function Files
   File /oname=$INSTDIR\bin\libdns.dll ${ARTIFACTS}\libdns.dll
   File /oname=$INSTDIR\bin\libisc.dll ${ARTIFACTS}\libisc.dll
   File /oname=$INSTDIR\bin\libisccfg.dll ${ARTIFACTS}\libisccfg.dll
-  File /oname=$INSTDIR\bin\libuv.dll ${ARTIFACTS}\libuv.dll
+  File /oname=$INSTDIR\bin\libssl-1_1-x64.dll ${ARTIFACTS}\libssl-1_1-x64.dll
   File /oname=$INSTDIR\bin\libxml2.dll ${ARTIFACTS}\libxml2.dll
+  File /oname=$INSTDIR\bin\nghttp2.dll ${ARTIFACTS}\nghttp2.dll
+  File /oname=$INSTDIR\bin\uv.dll ${ARTIFACTS}\uv.dll
 
 #!if /FileExists "${ARTIFACTS}\ncdt.exe"
 # This is listed in NSIS.chm but doesn't appear to be supported on the POSIX
@@ -1122,8 +1125,10 @@ Function un.Files
   Delete $INSTDIR\bin\libdns.dll
   Delete $INSTDIR\bin\libisc.dll
   Delete $INSTDIR\bin\libisccfg.dll
-  Delete $INSTDIR\bin\libuv.dll
+  Delete $INSTDIR\bin\libssl-1_1-x64.dll
   Delete $INSTDIR\bin\libxml2.dll
+  Delete $INSTDIR\bin\nghttp2.dll
+  Delete $INSTDIR\bin\uv.dll
 
   Delete $INSTDIR\etc\ncdns.conf.d\xlog.conf
   Delete $INSTDIR\etc\ncdns.conf
@@ -1152,6 +1157,12 @@ Function KeyConfigDNSSEC
   FileWrite $4 '"$INSTDIR" < nul'
   FileClose $4
   ${ExecToLog} '$PLUGINSDIR\keyconfig.cmd'
+  Pop $KeyDNSSECReturnCode
+  ${If} $KeyDNSSECReturnCode != 0
+    DetailPrint "Failed to generate DNSSEC key: return code $KeyDNSSECReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to generate DNSSEC key." /SD IDOK
+    Abort
+  ${EndIf}
   Delete $PLUGINSDIR\keyconfig.ps1
   Delete $PLUGINSDIR\keyconfig.cmd
 FunctionEnd
