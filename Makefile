@@ -94,11 +94,11 @@ $(ARTIFACTS)/ncdns.exe: $(ARTIFACTS)/$(NCDNS_ARCFN)
 # independently.  Also make sure you test for *multiple* Visual C++
 # dependencies; sometimes a single program might link against multiple Visual
 # C++ dependencies.
-BINDV=9.15.7
+BINDV=9.17.11
 $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip:
 	wget -O "$@" "https://ftp.isc.org/isc/bind/$(BINDV)/BIND$(BINDV).$(BINDARCH).zip"
 
-KGFILES=dnssec-keygen.exe libcrypto-1_1-x64.dll libdns.dll libisc.dll libisccfg.dll libuv.dll libxml2.dll
+KGFILES=dnssec-keygen.exe libcrypto-1_1-x64.dll libdns.dll libisc.dll libisccfg.dll libxml2.dll uv.dll
 KGFILES_T=$(foreach k,$(KGFILES),tmp/$(k))
 KGFILES_A=$(foreach k,$(KGFILES),$(ARTIFACTS)/$(k))
 
