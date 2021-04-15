@@ -98,7 +98,7 @@ BINDV=9.17.11
 $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip:
 	wget -O "$@" "https://ftp.isc.org/isc/bind/$(BINDV)/BIND$(BINDV).$(BINDARCH).zip"
 
-KGFILES=dnssec-keygen.exe libcrypto-1_1-x64.dll libdns.dll libisc.dll libisccfg.dll libxml2.dll uv.dll
+KGFILES=dnssec-keygen.exe libcrypto-1_1-x64.dll libdns.dll libisc.dll libisccfg.dll libssl-1_1-x64.dll libxml2.dll nghttp2.dll uv.dll
 KGFILES_T=$(foreach k,$(KGFILES),tmp/$(k))
 KGFILES_A=$(foreach k,$(KGFILES),$(ARTIFACTS)/$(k))
 
