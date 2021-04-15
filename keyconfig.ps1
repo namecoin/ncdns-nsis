@@ -1,4 +1,5 @@
 # Usage: Synopsis: keyconfig.ps1 "C:\Program Files (x86)\ncdns"
+$ErrorActionPreference = 'Stop'
 $ncdns_path = $args[0]
 cd "$ncdns_path\etc"
 
@@ -16,6 +17,9 @@ if (Test-Path "bit.private") {
 }
 # Generate KSK
 & "$ncdns_path\bin\dnssec-keygen.exe" -a ECDSAP256SHA256 -3 -f KSK bit.
+If (!$?) {
+  exit 1
+}
 # Move KSK files
 move Kbit.+*.key ..\..\bit.key
 move Kbit.+*.private bit.private
@@ -36,6 +40,9 @@ if (Test-Path "bit.private") {
 }
 # Generate ZSK
 & "$ncdns_path\bin\dnssec-keygen.exe" -a ECDSAP256SHA256 -3 bit.
+If (!$?) {
+  exit 1
+}
 # Move ZSK files
 move Kbit.+*.key bit.key
 move Kbit.+*.private bit.private

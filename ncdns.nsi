@@ -141,6 +141,7 @@ Var /GLOBAL EtcEncayaRootKeyReturnCode
 Var /GLOBAL EtcEncayaListenChainReturnCode
 Var /GLOBAL EtcEncayaListenKeyReturnCode
 Var /GLOBAL EtcEncayaRootCertReturnCode
+Var /GLOBAL KeyDNSSECReturnCode
 Var /GLOBAL KeyEncayaReturnCode
 
 # PRELAUNCH CHECKS
@@ -1152,6 +1153,12 @@ Function KeyConfigDNSSEC
   FileWrite $4 '"$INSTDIR" < nul'
   FileClose $4
   ${ExecToLog} '$PLUGINSDIR\keyconfig.cmd'
+  Pop $KeyDNSSECReturnCode
+  ${If} $KeyDNSSECReturnCode != 0
+    DetailPrint "Failed to generate DNSSEC key: return code $KeyDNSSECReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to generate DNSSEC key." /SD IDOK
+    Abort
+  ${EndIf}
   Delete $PLUGINSDIR\keyconfig.ps1
   Delete $PLUGINSDIR\keyconfig.cmd
 FunctionEnd
