@@ -129,11 +129,6 @@ $(ARTIFACTS)/$(NAMECOIN_FN):
 	wget -O "$@" "https://namecoin.org/files/namecoin-core-$(NAMECOIN_VER)$(NAMECOIN_VER_TAG)/$(NAMECOIN_FN)"
 
 
-### Q
-##############################################################################
-$(ARTIFACTS)/q.exe:
-	(cd "$(ARTIFACTS)"; GOOS=windows GOARCH=$(GOARCH) go build github.com/miekg/exdns/q;)
-
 ### INSTALLER
 ##############################################################################
 $(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(EXES_A) $(KGFILES_A) $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe
