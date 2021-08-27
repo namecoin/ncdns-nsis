@@ -462,9 +462,9 @@ Function NamecoinDialogCreate
     ${NSD_SetText} $NamecoinDialog_Status "An existing Namecoin Core installation was detected."
     ${NSD_SetText} $NamecoinDialog_Core "Automatically configure Namecoin Core (recommended)"
     ${If} $BitcoinJRequirementsMet == 1
-      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Install and use the BitcoinJ SPV client instead (lighter, less secure)"
+      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Install and use ConsensusJ-Namecoin instead (lighter, less secure)"
     ${Else}
-      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Cannot use BitcoinJ SPV client ($BitcoinJRequirementsError)"
+      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Cannot use ConsensusJ-Namecoin ($BitcoinJRequirementsError)"
       EnableWindow $NamecoinDialog_ConsensusJ 0
     ${EndIf}
     ${NSD_SetText} $NamecoinDialog_Manual "I will configure Namecoin Core myself (manual configuration required)"
@@ -472,10 +472,10 @@ Function NamecoinDialogCreate
     ${NSD_SetText} $NamecoinDialog_Status "An existing Namecoin Core installation was not detected."
     ${If} $BitcoinJRequirementsMet == 1
       ${NSD_SetText} $NamecoinDialog_Core "Install and configure Namecoin Core (heavier, more secure)"
-      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Install and use the BitcoinJ SPV client (lighter, less secure)"
+      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Install and use ConsensusJ-Namecoin (lighter, less secure)"
     ${Else}
       ${NSD_SetText} $NamecoinDialog_Core "Install and configure Namecoin Core (recommended)"
-      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Cannot use BitcoinJ SPV client ($BitcoinJRequirementsError)"
+      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Cannot use ConsensusJ-Namecoin ($BitcoinJRequirementsError)"
       EnableWindow $NamecoinDialog_ConsensusJ 0
     ${EndIf}
     ${NSD_SetText} $NamecoinDialog_Manual "I will provide my own Namecoin node (manual configuration required)"
@@ -869,12 +869,12 @@ Function BitcoinJ
 !ifndef NO_BITCOINJ
   ${If} $UseSPV == ${BST_UNCHECKED}
     # User did not elect to use SPV.
-    DetailPrint "Not installing BitcoinJ."
+    DetailPrint "Not installing ConsensusJ-Namecoin."
     Return
   ${EndIf}
 
   # Install BitcoinJ
-  DetailPrint "Installing BitcoinJ..."
+  DetailPrint "Installing ConsensusJ-Namecoin..."
   CreateDirectory $INSTDIR\BitcoinJ
   File /oname=$INSTDIR\BitcoinJ\bitcoinj-daemon.jar ${ARTIFACTS}\bitcoinj-daemon.jar
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledBitcoinJ" 1
