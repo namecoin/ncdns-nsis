@@ -1,6 +1,5 @@
 Var NamecoinDialog
 
-Var NamecoinDialog_Intro
 Var NamecoinDialog_Status
 Var NamecoinDialog_Core
 Var NamecoinDialog_ConsensusJ
@@ -14,28 +13,24 @@ Function NamecoinDialog_CreateSkeleton
   ${If} $NamecoinDialog == error
     Abort
   ${EndIf}
-  !insertmacro MUI_HEADER_TEXT "ncdns for Windows" "Namecoin Node"
-
-  # Intro Label
-  ${NSD_CreateLabel} 10u 0u -10u 15u "ncdns for Windows requires a Namecoin node to operate."
-  Pop $NamecoinDialog_Intro
+  !insertmacro MUI_HEADER_TEXT "Namecoin Node" "ncdns for Windows requires a Namecoin node to operate."
 
   # Status Label
-  ${NSD_CreateLabel} 10u 22.5u -10u 15u "NAMECOIN_NODE_STATUS"
+  ${NSD_CreateLabel} 10u 0u -10u 15u "NAMECOIN_NODE_STATUS"
   Pop $NamecoinDialog_Status
 
   # Namecoin Core RadioButton
-  ${NSD_CreateRadioButton} 10u 45u -10u 15u "NAMECOIN_NODE_YES"
+  ${NSD_CreateRadioButton} 10u 22.5u -10u 15u "NAMECOIN_NODE_YES"
   Pop $NamecoinDialog_Core
   ${NSD_AddStyle} $NamecoinDialog_Core ${WS_GROUP}
   ${NSD_Check} $NamecoinDialog_Core
 
   # ConsensusJ RadioButton
-  ${NSD_CreateRadioButton} 10u 60u -10u 15u "NAMECOIN_NODE_SPV"
+  ${NSD_CreateRadioButton} 10u 37.5u -10u 15u "NAMECOIN_NODE_SPV"
   Pop $NamecoinDialog_ConsensusJ
 
   # Manual RadioButton
-  ${NSD_CreateRadioButton} 10u 75u -10u 15u "NAMECOIN_NODE_NO"
+  ${NSD_CreateRadioButton} 10u 52.5u -10u 15u "NAMECOIN_NODE_NO"
   Pop $NamecoinDialog_Manual
 
 FunctionEnd
