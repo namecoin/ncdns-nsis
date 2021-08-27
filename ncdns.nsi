@@ -30,6 +30,7 @@ SetCompressor /SOLID lzma
 
 !include "namecoin-dialog.nsdinc"
 !include "dns-dialog.nsdinc"
+!include "tls-positive-dialog.nsdinc"
 
 !include "exectolog.nsh"
 
@@ -37,6 +38,7 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom NamecoinDialogCreate NamecoinDialogLeave
 Page custom DNSDialogCreate DNSDialogLeave
+Page custom TLSPositiveDialogCreate TLSPositiveDialogLeave
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -95,7 +97,9 @@ Var /GLOBAL UseSPV
 Var /GLOBAL NamecoinCoreDetected
 Var /GLOBAL UnboundDetected
 
-Var /GLOBAL CrypoAPIRejected
+Var /GLOBAL CryptoAPIRejected
+Var /GLOBAL CryptoAPIInjectionEnabled
+Var /GLOBAL CryptoAPIEncayaEnabled
 Var /GLOBAL JREPath
 Var /GLOBAL JREDetected
 Var /GLOBAL JRE32Detected
@@ -511,6 +515,17 @@ FunctionEnd
 
 Function DNSDialogLeave
   ${NSD_GetState} $DNSDialog_Manual $SkipUnbound
+FunctionEnd
+
+Function TLSPositiveDialogCreate
+  Call TLSPositiveDialog_CreateSkeleton
+
+  nsDialogs::Show
+FunctionEnd
+
+Function TLSPositiveDialogLeave
+  ${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
+  ${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer2 $CryptoAPIEncayaEnabled
 FunctionEnd
 
 
@@ -1049,8 +1064,8 @@ Function FilesSecure
 FunctionEnd
 
 Function FilesSecureEncayaPre
-  ${If} $CrypoAPIRejected = 1
-    DetailPrint "*** Skipping Encaya filesystem permissions because CryptoAPI HTTPS support was rejected."
+  ${If} $CryptoAPIEncayaEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Encaya filesystem permissions because CryptoAPI Encaya support was rejected."
     Return
   ${EndIf}
 
@@ -1086,8 +1101,8 @@ Function FilesSecureEncayaPre
 FunctionEnd
 
 Function FilesSecureEncaya
-  ${If} $CrypoAPIRejected = 1
-    DetailPrint "*** Skipping Encaya filesystem permissions because CryptoAPI HTTPS support was rejected."
+  ${If} $CryptoAPIEncayaEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Encaya filesystem permissions because CryptoAPI Encaya support was rejected."
     Return
   ${EndIf}
 
@@ -1182,8 +1197,8 @@ FunctionEnd
 # FILE INSTALLATION/UNINSTALLATION
 ##############################################################################
 Function KeyConfigEncaya
-  ${If} $CrypoAPIRejected = 1
-    DetailPrint "*** Skipping Encaya key generation because CryptoAPI HTTPS support was rejected."
+  ${If} $CryptoAPIEncayaEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Encaya key generation because CryptoAPI Encaya support was rejected."
     Return
   ${EndIf}
 
@@ -1263,8 +1278,8 @@ Function un.ServiceNcdns
 FunctionEnd
 
 Function ServiceEncaya
-  ${If} $CrypoAPIRejected = 1
-    DetailPrint "*** Skipping Encaya key service creation because CryptoAPI HTTPS support was rejected."
+  ${If} $CryptoAPIEncayaEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Encaya service creation because CryptoAPI Encaya support was rejected."
     Return
   ${EndIf}
 
@@ -1305,8 +1320,8 @@ Function ServiceEncaya
 FunctionEnd
 
 Function ServiceEncayaEventLog
-  ${If} $CrypoAPIRejected = 1
-    DetailPrint "*** Skipping Encaya event log registration because CryptoAPI HTTPS support was rejected."
+  ${If} $CryptoAPIEncayaEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Encaya event log registration because CryptoAPI Encaya support was rejected."
     Return
   ${EndIf}
 
@@ -1316,8 +1331,8 @@ Function ServiceEncayaEventLog
 FunctionEnd
 
 Function ServiceEncayaStart
-  ${If} $CrypoAPIRejected = 1
-    DetailPrint "*** Skipping Encaya service start because CryptoAPI HTTPS support was rejected."
+  ${If} $CryptoAPIEncayaEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Encaya service start because CryptoAPI Encaya support was rejected."
     Return
   ${EndIf}
 
@@ -1424,20 +1439,15 @@ FunctionEnd
 # REGISTRY PERMISSION CONFIGURATION FOR NCDNS TRUST INJECTION
 ##############################################################################
 Function TrustConfig
-  StrCpy $CrypoAPIRejected 0
+  StrCpy $CryptoAPIRejected 0
 
   Call PromptCryptoAPI
-
-  ${If} $CrypoAPIRejected = 1
-    DetailPrint "*** CryptoAPI HTTPS support was not configured."
-    Return
-  ${EndIf}
 
   Call TrustNameConstraintsConfig
   Call TrustEncayaConfig
   Call TrustInjectionConfig
 
-  DetailPrint "*** CryptoAPI HTTPS support was configured."
+  DetailPrint "*** CryptoAPI TLS support was configured (if requested)."
 FunctionEnd
 
 Function un.TrustConfig
@@ -1451,15 +1461,21 @@ Function PromptCryptoAPI
 
 chose_no:
   DetailPrint "*** User elected not to configure CryptoAPI HTTPS"
-  StrCpy $CrypoAPIRejected 1
+  StrCpy $CryptoAPIRejected 1
   Return
 
 chose_yes:
-  StrCpy $CrypoAPIRejected 0
+  StrCpy $CryptoAPIRejected 0
   Return
 FunctionEnd
 
 Function TrustEncayaConfig
+  ${If} $CryptoAPIEncayaEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Encaya config because CryptoAPI Encaya support was rejected."
+    Return
+  ${EndIf}
+
+  DetailPrint "*** Installing Encaya files..."
   File /oname=$INSTDIR\bin\encaya.exe ${ARTIFACTS}\encaya.exe
   CreateDirectory $INSTDIR\etc_encaya
   CreateDirectory $INSTDIR\etc_encaya\encaya.conf.d
@@ -1486,6 +1502,11 @@ Function un.TrustEncayaConfig
 FunctionEnd
 
 Function CertInjectEncaya
+  ${If} $CryptoAPIEncayaEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Encaya certinject because CryptoAPI Encaya support was rejected."
+    Return
+  ${EndIf}
+
   # TODO: Delete Encaya cert from trust store when uninstalling
   File /oname=$PLUGINSDIR\certinject.exe ${ARTIFACTS}\certinject.exe
 
@@ -1500,6 +1521,11 @@ Function CertInjectEncaya
 FunctionEnd
 
 Function TrustNameConstraintsConfig
+  ${If} $CryptoAPIRejected = 1
+    DetailPrint "*** CryptoAPI Negative TLS support was not configured."
+    Return
+  ${EndIf}
+
   DetailPrint "*** Extracting AuthRootWU"
   File /oname=$PLUGINSDIR\verifyctl.cmd verifyctl.cmd
   ${ExecToLog} '"$PLUGINSDIR\verifyctl.cmd"'
@@ -1528,6 +1554,11 @@ Function TrustNameConstraintsConfig
 FunctionEnd
 
 Function TrustInjectionConfig
+  ${If} $CryptoAPIInjectionEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Injection config because CryptoAPI Injection support was rejected."
+    Return
+  ${EndIf}
+
   DetailPrint "*** Configuring cert store permissions"
   File /oname=$PLUGINSDIR\regpermrun.ps1 regpermrun.ps1
   File /oname=$PLUGINSDIR\regperm.ps1 regperm.ps1
