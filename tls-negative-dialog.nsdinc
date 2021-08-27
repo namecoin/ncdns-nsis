@@ -1,0 +1,20 @@
+Var TLSNegativeDialog
+
+Var TLSNegativeDialog_CryptoAPINCProp
+
+Function TLSNegativeDialog_CreateSkeleton
+
+  # Dialog
+  nsDialogs::Create 1018
+  Pop $TLSNegativeDialog
+  ${If} $TLSNegativeDialog == error
+    Abort
+  ${EndIf}
+  !insertmacro MUI_HEADER_TEXT "Interception-Resistant TLS" "Protect Namecoin TLS connections from compromised public certificate authorities."
+
+  # CryptoAPI Name Constraints Property CheckBox
+  ${NSD_CreateCheckBox} 0u 0u 100% 100% "CryptoAPI: Works for arbitrary applications that use Windows for certificate verification (e.g. most non-Mozilla browsers).  Not yet sandboxed.  Will overwrite any existing Name Constraints properties that have been applied to certificates (unlikely to be a problem, since no known software besides Namecoin uses Name Constraints properties).  There may be edge cases (especially in already-insecure 3rd-party software) where a malicious certificate signed by a compromised public non-Namecoin CA could still be accepted for Namecoin domains."
+  Pop $TLSNegativeDialog_CryptoAPINCProp
+  ${NSD_Check} $TLSNegativeDialog_CryptoAPINCProp
+
+FunctionEnd
