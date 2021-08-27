@@ -28,6 +28,11 @@ SetCompressor /SOLID lzma
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW ShowCallback
 
+# From https://docs.microsoft.com/en-US/windows/security/identity-protection/access-control/security-identifiers
+!define SID_SYSTEM "*S-1-5-18"
+!define SID_ADMINISTRATORS "*S-1-5-32-544"
+!define SID_USERS "*S-1-5-32-545"
+
 !include "namecoin-dialog.nsdinc"
 !include "dns-dialog.nsdinc"
 !include "tls-positive-dialog.nsdinc"
@@ -780,7 +785,7 @@ haveDataDir:
 
   # Configure cookie directory.
   CreateDirectory C:\ProgramData\NamecoinCookie
-  ${ExecToLog} 'icacls "C:\ProgramData\NamecoinCookie" /inheritance:r /T /grant "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" "Users:(OI)(CI)F"'
+  ${ExecToLog} 'icacls "C:\ProgramData\NamecoinCookie" /inheritance:r /T /grant "${SID_SYSTEM}:(OI)(CI)F" "${SID_ADMINISTRATORS}:(OI)(CI)F" "${SID_USERS}:(OI)(CI)F"'
   Pop $CoreCookieDirReturnCode
   ${If} $CoreCookieDirReturnCode != 0
     DetailPrint "Failed to set ACL on Namecoin Core cookie directory: return code $CoreCookieDirReturnCode"
@@ -998,7 +1003,7 @@ Function FilesConfig
 FunctionEnd
 
 Function FilesSecurePre
-  ${ExecToLog} 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+  ${ExecToLog} 'icacls "$INSTDIR\etc" /inheritance:r /T /grant "NT SERVICE\ncdns:(OI)(CI)R" "${SID_SYSTEM}:(OI)(CI)F" "${SID_ADMINISTRATORS}:(OI)(CI)F"'
   Pop $EtcReturnCode
   ${If} $EtcReturnCode != 0
     DetailPrint "Failed to set ACL on etc: return code $EtcReturnCode"
@@ -1081,7 +1086,7 @@ Function FilesSecureEncayaPre
     Return
   ${EndIf}
 
-  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya" /inheritance:r /T /grant "NT SERVICE\encaya:(OI)(CI)R" "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"'
+  ${ExecToLog} 'icacls "$INSTDIR\etc_encaya" /inheritance:r /T /grant "NT SERVICE\encaya:(OI)(CI)R" "${SID_SYSTEM}:(OI)(CI)F" "${SID_ADMINISTRATORS}:(OI)(CI)F"'
   Pop $EtcEncayaReturnCode
   ${If} $EtcEncayaReturnCode != 0
     DetailPrint "Failed to set ACL on etc_encaya: return code $EtcEncayaReturnCode"
