@@ -70,21 +70,6 @@ OUTFN := $(BUILD)/bin/ncdns-$(NCDNS_PRODVER)-$(NCARCH)-install.exe
 all: $(OUTFN)
 
 
-### NCDNS
-##############################################################################
-NCDNS_ARCFN=ncdns-$(NCDNS_PRODVER)-windows_$(GOARCH).tar.gz
-
-$(ARTIFACTS)/$(NCDNS_ARCFN):
-	mkdir -p "$(ARTIFACTS)"
-	wget -O "$@" "https://api.cirrus-ci.com/v1/artifact/github/namecoin/ncdns/Cross-Compile Go latest/binaries/dist/$(NCDNS_ARCFN)?branch=$(NCDNS_PRODVER)"
-
-EXES=ncdns ncdumpzone generate_nmc_cert ncdt tlsrestrict_chromium_tool
-EXES_A=$(foreach k,$(EXES),$(ARTIFACTS)/$(k).exe)
-
-$(ARTIFACTS)/ncdns.exe: $(ARTIFACTS)/$(NCDNS_ARCFN)
-	(cd "$(ARTIFACTS)"; tar zxvf "$(NCDNS_ARCFN)"; mv ncdns-$(NCDNS_PRODVER)-windows_$(GOARCH)/bin/* ./; rm -rf ncdns-$(NCDNS_PRODVER)-windows_$(GOARCH);)
-
-
 ### DNSSEC-KEYGEN
 ##############################################################################
 # When bumping the BIND version, make sure to test whether its Visual C++
@@ -131,7 +116,7 @@ $(ARTIFACTS)/$(NAMECOIN_FN):
 
 ### INSTALLER
 ##############################################################################
-$(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(EXES_A) $(KGFILES_A) $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe
+$(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(KGFILES_A) $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe
 	@mkdir -p "$(BUILD)/bin"
 	$(MAKENSIS) $(NSISFLAGS) -DPOSIX_BUILD=1 -DNCDNS_PRODVER=$(NCDNS_PRODVER_W) \
 		$(_NCDNS_64BIT) $(_NO_NAMECOIN_CORE) $(_NO_DNSSEC_TRIGGER) $(_NCDNS_LOGGING) \
