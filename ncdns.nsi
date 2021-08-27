@@ -31,6 +31,7 @@ SetCompressor /SOLID lzma
 !include "namecoin-dialog.nsdinc"
 !include "dns-dialog.nsdinc"
 !include "tls-positive-dialog.nsdinc"
+!include "tls-negative-dialog.nsdinc"
 
 !include "exectolog.nsh"
 
@@ -39,6 +40,7 @@ SetCompressor /SOLID lzma
 Page custom NamecoinDialogCreate NamecoinDialogLeave
 Page custom DNSDialogCreate DNSDialogLeave
 Page custom TLSPositiveDialogCreate TLSPositiveDialogLeave
+Page custom TLSNegativeDialogCreate TLSNegativeDialogLeave
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -97,9 +99,9 @@ Var /GLOBAL UseSPV
 Var /GLOBAL NamecoinCoreDetected
 Var /GLOBAL UnboundDetected
 
-Var /GLOBAL CryptoAPIRejected
 Var /GLOBAL CryptoAPIInjectionEnabled
 Var /GLOBAL CryptoAPIEncayaEnabled
+Var /GLOBAL CryptoAPINameConstraintsEnabled
 Var /GLOBAL JREPath
 Var /GLOBAL JREDetected
 Var /GLOBAL JRE32Detected
@@ -526,6 +528,16 @@ FunctionEnd
 Function TLSPositiveDialogLeave
   ${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
   ${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer2 $CryptoAPIEncayaEnabled
+FunctionEnd
+
+Function TLSNegativeDialogCreate
+  Call TLSNegativeDialog_CreateSkeleton
+
+  nsDialogs::Show
+FunctionEnd
+
+Function TLSNegativeDialogLeave
+  ${NSD_GetState} $TLSNegativeDialog_CryptoAPINCProp $CryptoAPINameConstraintsEnabled
 FunctionEnd
 
 
@@ -1439,10 +1451,6 @@ FunctionEnd
 # REGISTRY PERMISSION CONFIGURATION FOR NCDNS TRUST INJECTION
 ##############################################################################
 Function TrustConfig
-  StrCpy $CryptoAPIRejected 0
-
-  Call PromptCryptoAPI
-
   Call TrustNameConstraintsConfig
   Call TrustEncayaConfig
   Call TrustInjectionConfig
@@ -1452,21 +1460,6 @@ FunctionEnd
 
 Function un.TrustConfig
   Call un.TrustInjectionConfig
-FunctionEnd
-
-Function PromptCryptoAPI
-  # Prompt user.
-  # TODO: Add to documentation: "The install script parses network-supplied data and is not yet sandboxed.  The install script will overwrite any existing Name Constraints properties that have been applied to certificates (though this is unlikely to be a problem, since we believe Namecoin is the only software that uses Name Constraints properties).  There may be edge cases (especially in poorly coded web browsers) where a malicious certificate signed by a compromised public non-Namecoin CA could still be accepted for Namecoin websites."
-  MessageBox MB_ICONQUESTION|MB_YESNO "ncdns can enable HTTPS for Namecoin websites in web browsers that use Windows for certificate verification (i.e. most web browsers that are not Mozilla-based).  This will protect your communications with Namecoin-enabled websites from being easily wiretapped or tampered with in transit.  Doing this requires giving ncdns permission to modify Windows's root certificate authority list.  ncdns will not intentionally add any previously-untrusted certificate authorities to Windows that are valid for non-Namecoin websites, but if an attacker were able to exploit ncdns, they might be able to wiretap or tamper with your Internet traffic (both Namecoin and non-Namecoin websites).$\n$\nThe HTTPS support is not yet foolproof!  See documentation for details.$\n$\nWould you like to enable HTTPS for Namecoin websites?" /SD IDYES IDYES chose_yes IDNO chose_no
-
-chose_no:
-  DetailPrint "*** User elected not to configure CryptoAPI HTTPS"
-  StrCpy $CryptoAPIRejected 1
-  Return
-
-chose_yes:
-  StrCpy $CryptoAPIRejected 0
-  Return
 FunctionEnd
 
 Function TrustEncayaConfig
@@ -1521,7 +1514,7 @@ Function CertInjectEncaya
 FunctionEnd
 
 Function TrustNameConstraintsConfig
-  ${If} $CryptoAPIRejected = 1
+  ${If} $CryptoAPINameConstraintsEnabled == ${BST_UNCHECKED}
     DetailPrint "*** CryptoAPI Negative TLS support was not configured."
     Return
   ${EndIf}
