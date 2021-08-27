@@ -20,7 +20,7 @@ task:
         cpu: 1
         memory: 1G
       install_script:
-        - dnf install -y make mingw32-nsis unzip wget
+        - dnf install -y git make mingw32-nsis unzip wget
       env:
         DISTRO: Fedora
         NCDNS_LOGGING: "1"
@@ -55,10 +55,16 @@ task:
     - tar -xaf qlib--windows_amd64.tar.gz
     - mv qlib--windows_amd64/bin/*.exe ./
     - rm -rf qlib--windows_amd64/
+    - curl -o ncdns--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/ncdns/Cross-Compile%20Go%20latest/binaries/dist/ncdns--windows_amd64.tar.gz
+    - tar -xaf ncdns--windows_amd64.tar.gz
+    - mv ncdns--windows_amd64/bin/*.exe ./
+    - rm -rf ncdns--windows_amd64/
     - cd ../../
   build_script:
+    # Tag detection from ncdns-repro
+    - NCDNS_TAG=$(git ls-remote --tags "https://github.com/namecoin/ncdns.git" | grep -v '\^{}' | awk '{print $2}' | awk -F"/" '{print $3}' | sort -V | tail --lines=1)
     # TODO: check for NSIS warnings
-    - make NCDNS_64BIT=1 NCDNS_PRODVER=v0.2
+    - make NCDNS_64BIT=1 NCDNS_PRODVER=$NCDNS_TAG
     - mv build64/bin/ncdns-*-win64-install.exe ./ncdns--win64-install.exe
   upload_script:
     - curl -s -X POST --data-binary @ncdns--win64-install.exe http://$CIRRUS_HTTP_CACHE_HOST/cross_compile_bin_$DISTRO
