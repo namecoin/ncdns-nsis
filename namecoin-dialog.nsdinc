@@ -34,8 +34,3 @@ Function NamecoinDialog_CreateSkeleton
   Pop $NamecoinDialog_Manual
 
 FunctionEnd
-
-Function NamecoinDialog_Show
-  Call NamecoinDialog_CreateSkeleton
-  nsDialogs::Show
-FunctionEnd

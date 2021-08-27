@@ -29,9 +29,3 @@ Function DNSDialog_CreateSkeleton
   Pop $DNSDialog_Manual
 
 FunctionEnd
-
-# dialog show function
-Function DNSDialog_Show
-  Call DNSDialog_CreateSkeleton
-  nsDialogs::Show
-FunctionEnd
