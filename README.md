@@ -25,7 +25,7 @@ Build flags:
 
 Install-time flags:
 
-  - `/S` — install silently.
+  - [All standard NSIS flags.](https://nsis.sourceforge.io/Docs/Chapter3.html#installerusage)
   - `/ETLD=org` — set up the TLS name constraints exclusion with a different eTLD from the default `bit`.  Only useful for debugging.
 
 ## Licence
