@@ -1,0 +1,46 @@
+Var NamecoinDialog
+
+Var NamecoinDialog_Intro
+Var NamecoinDialog_Status
+Var NamecoinDialog_Core
+Var NamecoinDialog_ConsensusJ
+Var NamecoinDialog_Manual
+
+Function NamecoinDialog_CreateSkeleton
+
+  # Dialog
+  nsDialogs::Create 1018
+  Pop $NamecoinDialog
+  ${If} $NamecoinDialog == error
+    Abort
+  ${EndIf}
+  !insertmacro MUI_HEADER_TEXT "ncdns for Windows" "Namecoin Node"
+
+  # Status Label
+  ${NSD_CreateLabel} 15.8u 27.69u 268.56u 11.08u "NAMECOIN_NODE_STATUS"
+  Pop $NamecoinDialog_Status
+
+  # Namecoin Core RadioButton
+  ${NSD_CreateRadioButton} 15.8u 35.69u 268.56u 14.77u "NAMECOIN_NODE_YES"
+  Pop $NamecoinDialog_Core
+  ${NSD_AddStyle} $NamecoinDialog_Core ${WS_GROUP}
+  ${NSD_Check} $NamecoinDialog_Core
+
+  # ConsensusJ RadioButton
+  ${NSD_CreateRadioButton} 15.8u 50.46u 268.56u 14.77u "NAMECOIN_NODE_SPV"
+  Pop $NamecoinDialog_ConsensusJ
+
+  # Manual RadioButton
+  ${NSD_CreateRadioButton} 15.8u 65.23u 268.56u 14.77u "NAMECOIN_NODE_NO"
+  Pop $NamecoinDialog_Manual
+
+  # Intro Label
+  ${NSD_CreateLabel} 10.53u -0.62u 277.77u 16u "ncdns for Windows requires a Namecoin node to operate."
+  Pop $NamecoinDialog_Intro
+
+FunctionEnd
+
+Function NamecoinDialog_Show
+  Call NamecoinDialog_CreateSkeleton
+  nsDialogs::Show
+FunctionEnd

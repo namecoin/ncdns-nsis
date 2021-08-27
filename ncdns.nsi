@@ -28,13 +28,15 @@ SetCompressor /SOLID lzma
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW ShowCallback
 
-!include "components-dialog.nsdinc"
+!include "namecoin-dialog.nsdinc"
+!include "dns-dialog.nsdinc"
 
 !include "exectolog.nsh"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
-Page custom ComponentDialogCreate ComponentDialogLeave
+Page custom NamecoinDialogCreate NamecoinDialogLeave
+Page custom DNSDialogCreate DNSDialogLeave
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -453,53 +455,62 @@ Function ShowCallback
 FunctionEnd
 
 
-Function ComponentDialogCreate
-  Call fnc_components_dialog_Create
+Function NamecoinDialogCreate
+  Call NamecoinDialog_CreateSkeleton
 
   ${If} $NamecoinCoreDetected == 1
-    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was detected."
-    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Automatically configure Namecoin Core (recommended)"
+    ${NSD_SetText} $NamecoinDialog_Status "An existing Namecoin Core installation was detected."
+    ${NSD_SetText} $NamecoinDialog_Core "Automatically configure Namecoin Core (recommended)"
     ${If} $BitcoinJRequirementsMet == 1
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client instead (lighter, less secure)"
+      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Install and use the BitcoinJ SPV client instead (lighter, less secure)"
     ${Else}
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client ($BitcoinJRequirementsError)"
-      EnableWindow $hCtl_components_dialog_NamecoinCore_SPV 0
+      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Cannot use BitcoinJ SPV client ($BitcoinJRequirementsError)"
+      EnableWindow $NamecoinDialog_ConsensusJ 0
     ${EndIf}
-    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will configure Namecoin Core myself (manual configuration required)"
+    ${NSD_SetText} $NamecoinDialog_Manual "I will configure Namecoin Core myself (manual configuration required)"
   ${Else}
-    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Status "An existing Namecoin Core installation was not detected."
+    ${NSD_SetText} $NamecoinDialog_Status "An existing Namecoin Core installation was not detected."
     ${If} $BitcoinJRequirementsMet == 1
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (heavier, more secure)"
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Install and use the BitcoinJ SPV client (lighter, less secure)"
+      ${NSD_SetText} $NamecoinDialog_Core "Install and configure Namecoin Core (heavier, more secure)"
+      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Install and use the BitcoinJ SPV client (lighter, less secure)"
     ${Else}
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_Yes "Install and configure Namecoin Core (recommended)"
-      ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_SPV "Cannot use BitcoinJ SPV client ($BitcoinJRequirementsError)"
-      EnableWindow $hCtl_components_dialog_NamecoinCore_SPV 0
+      ${NSD_SetText} $NamecoinDialog_Core "Install and configure Namecoin Core (recommended)"
+      ${NSD_SetText} $NamecoinDialog_ConsensusJ "Cannot use BitcoinJ SPV client ($BitcoinJRequirementsError)"
+      EnableWindow $NamecoinDialog_ConsensusJ 0
     ${EndIf}
-    ${NSD_SetText} $hCtl_components_dialog_NamecoinCore_No "I will provide my own Namecoin node (manual configuration required)"
-  ${EndIf}
-
-  ${If} $UnboundDetected == 1
-    ${NSD_SetText} $hCtl_components_dialog_Unbound_Status "An existing Unbound installation was detected."
-    ${NSD_SetText} $hCtl_components_dialog_Unbound_Yes "Automatically configure Unbound (recommended)"
-    ${NSD_SetText} $hCtl_components_dialog_Unbound_No "I will configure Unbound myself (manual configuration required)"
-  ${Else}
-    ${NSD_SetText} $hCtl_components_dialog_Unbound_Status "An existing Unbound installation was not detected."
-    ${NSD_SetText} $hCtl_components_dialog_Unbound_Yes "Install and configure Unbound/DNSSEC Trigger (recommended)"
-    ${NSD_SetText} $hCtl_components_dialog_Unbound_No "I will provide my own DNS resolver (manual configuration required)"
+    ${NSD_SetText} $NamecoinDialog_Manual "I will provide my own Namecoin node (manual configuration required)"
   ${EndIf}
 
   nsDialogs::Show
 FunctionEnd
 
-Function ComponentDialogLeave
-  ${NSD_GetState} $hCtl_components_dialog_NamecoinCore_No $SkipNamecoinCore
-  ${NSD_GetState} $hCtl_components_dialog_NamecoinCore_SPV $UseSPV
-  ${NSD_GetState} $hCtl_components_dialog_Unbound_No $SkipUnbound
+Function NamecoinDialogLeave
+  ${NSD_GetState} $NamecoinDialog_Manual $SkipNamecoinCore
+  ${NSD_GetState} $NamecoinDialog_ConsensusJ $UseSPV
 
   ${If} $UseSPV == ${BST_CHECKED}
     StrCpy $SkipNamecoinCore 1
   ${EndIf}
+FunctionEnd
+
+Function DNSDialogCreate
+  Call DNSDialog_CreateSkeleton
+
+  ${If} $UnboundDetected == 1
+    ${NSD_SetText} $DNSDialog_Status "An existing Unbound installation was detected."
+    ${NSD_SetText} $DNSDialog_Unbound "Automatically configure Unbound (recommended)"
+    ${NSD_SetText} $DNSDialog_Manual "I will configure Unbound myself (manual configuration required)"
+  ${Else}
+    ${NSD_SetText} $DNSDialog_Status "An existing Unbound installation was not detected."
+    ${NSD_SetText} $DNSDialog_Unbound "Install and configure Unbound/DNSSEC Trigger (recommended)"
+    ${NSD_SetText} $DNSDialog_Manual "I will provide my own DNS resolver (manual configuration required)"
+  ${EndIf}
+
+  nsDialogs::Show
+FunctionEnd
+
+Function DNSDialogLeave
+  ${NSD_GetState} $DNSDialog_Manual $SkipUnbound
 FunctionEnd
 
 

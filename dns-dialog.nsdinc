@@ -1,0 +1,42 @@
+Var DNSDialog
+
+Var DNSDialog_Intro
+Var DNSDialog_Status
+Var DNSDialog_Unbound
+Var DNSDialog_Manual
+
+Function DNSDialog_CreateSkeleton
+
+  # Dialog
+  nsDialogs::Create 1018
+  Pop $DNSDialog
+  ${If} $DNSDialog == error
+    Abort
+  ${EndIf}
+  !insertmacro MUI_HEADER_TEXT "ncdns for Windows" "DNS Resolution"
+
+  # Status Label
+  ${NSD_CreateLabel} 15.8u 99.69u 268.56u 11.08u "UNBOUND_STATUS"
+  Pop $DNSDialog_Status
+
+  # Unbound RadioButton
+  ${NSD_CreateRadioButton} 15.8u 107.69u 268.56u 14.77u "UNBOUND_YES"
+  Pop $DNSDialog_Unbound
+  ${NSD_AddStyle} $DNSDialog_Unbound ${WS_GROUP}
+  ${NSD_Check} $DNSDialog_Unbound
+
+  # Manual RadioButton
+  ${NSD_CreateRadioButton} 15.8u 122.46u 268.56u 14.77u "UNBOUND_NO"
+  Pop $DNSDialog_Manual
+
+  # Intro Label
+  ${NSD_CreateLabel} 10.53u -0.62u 277.77u 16u "ncdns for Windows requires Unbound (or another DNS resolver) to operate."
+  Pop $DNSDialog_Intro
+
+FunctionEnd
+
+# dialog show function
+Function DNSDialog_Show
+  Call DNSDialog_CreateSkeleton
+  nsDialogs::Show
+FunctionEnd
