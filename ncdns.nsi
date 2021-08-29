@@ -96,6 +96,7 @@ Var /GLOBAL UnboundConfPath
 Var /GLOBAL UnboundFragmentLocation
 Var /GLOBAL DNSSECTriggerUninstallCommand
 Var /GLOBAL NamecoinCoreUninstallCommand
+Var /GLOBAL ElectrumNMCUninstallCommand
 Var /GLOBAL NamecoinCoreDataDir
 Var /GLOBAL SkipNamecoinCore
 Var /GLOBAL SkipUnbound
@@ -525,8 +526,7 @@ Function NamecoinDialogCreate
   ${If} $ElectrumNMCDetected == 1
     ${NSD_SetText} $NamecoinDialog_Electrum "Automatically configure Electrum-NMC (lighter, less secure)"
   ${Else}
-    ${NSD_SetText} $NamecoinDialog_Electrum "An existing Electrum-NMC installation was not detected."
-    EnableWindow $NamecoinDialog_Electrum 0
+    ${NSD_SetText} $NamecoinDialog_Electrum "Install and configure Electrum-NMC (lighter, less secure)"
   ${EndIf}
 
   nsDialogs::Show
@@ -600,6 +600,7 @@ Section "ncdns" Sec_ncdns
   Call DNSSECTrigger
   Call NamecoinCoreConfig
   Call NamecoinCore
+  Call ElectrumNMC
   Call ServiceNcdns
   Call Files
   Call FilesConfig
@@ -634,6 +635,7 @@ Section "Uninstall"
   Call un.TrustEncayaConfig
   Call un.Files
   Call un.NamecoinCore
+  Call un.ElectrumNMC
   Call un.BitcoinJ
   Call un.DNSSECTrigger
   Call un.Reg
@@ -934,6 +936,76 @@ found:
 
 done:
   # Didn't install/not uninstalling Namecoin Core.
+!endif
+FunctionEnd
+
+
+# ELECTRUM-NMC CHAIN INSTALLATION
+##############################################################################
+Function ElectrumNMC
+!ifndef NO_ELECTRUM_NMC
+  ${If} $ElectrumNMCDetected == 1
+    # Already have Electrum-NMC
+    DetailPrint "An existing Electrum-NMC installation was detected. Not installing."
+    Return
+  ${EndIf}
+  DetailPrint "An existing Electrum-NMC installation was NOT detected."
+
+  ${If} $UseElectrumNMC == ${BST_UNCHECKED}
+    DetailPrint "Not installing Electrum-NMC."
+    Return
+  ${EndIf}
+
+  # Install Electrum-NMC
+  DetailPrint "Installing Electrum-NMC..."
+  File /oname=$PLUGINSDIR\electrum-nmc-setup.exe ${ARTIFACTS}\${ELECTRUM_NMC_FN}
+again:
+  IfSilent install_silent
+  # Install with NSIS GUI
+  ExecWait '"$PLUGINSDIR\electrum-nmc-setup.exe"'
+  Goto detect
+install_silent:
+  ExecWait '"$PLUGINSDIR\electrum-nmc-setup.exe" /S'
+
+detect:
+  Call DetectElectrumNMC
+  ${If} $ElectrumNMCDetected == 0
+    MessageBox "MB_OKCANCEL|MB_ICONSTOP" "Electrum-NMC was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
+    Abort
+  ${EndIf}
+
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledElectrumNMC" 1
+  Delete /REBOOTOK $PLUGINSDIR\electrum-nmc-setup.exe
+!endif
+FunctionEnd
+
+Function un.ElectrumNMC
+!ifndef NO_ELECTRUM_NMC
+  # Determine if we were responsible for installing Electrum-NMC; if so, we
+  # should uninstall it.
+  ClearErrors
+  ReadRegDWORD $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledElectrumNMC"
+  IfErrors done
+  IntCmp $0 0 done
+
+  # Detect Electrum-NMC uninstall command. If we cannot find it, don't offer
+  # to uninstall it, as we don't know how.
+  ClearErrors
+  ReadRegStr $ElectrumNMCUninstallCommand HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Electrum-NMC" "UninstallString"
+  IfErrors 0 found
+  Goto done
+
+found:
+  # Ask the user if they want to uninstall Electrum-NMC
+  MessageBox MB_YESNO|MB_ICONQUESTION "When you installed ncdns for Windows, Electrum-NMC was installed automatically as a necessary dependency of ncdns for Windows. Would you like to remove it? If you leave it in place, you will not be able to connect to .bit domains, but will still be able to use Electrum-NMC as a Namecoin node and wallet.$\n$\nSelect Yes to remove Electrum-NMC." /SD IDYES IDYES 0 IDNO done
+
+  # Uninstall Electrum-NMC.
+  DetailPrint "Uninstalling Electrum-NMC... $ElectrumNMCUninstallCommand"
+  ExecWait $ElectrumNMCUninstallCommand
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "ncdns_InstalledElectrumNMC"
+
+done:
+  # Didn't install/not uninstalling Electrum-NMC.
 !endif
 FunctionEnd
 
