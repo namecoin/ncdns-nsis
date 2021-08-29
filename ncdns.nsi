@@ -197,6 +197,16 @@ Function .onInit
 
   Call DetectETLD
 
+  # Default components
+  Push ${BST_UNCHECKED}
+  Pop $SkipNamecoinCore
+  Push ${BST_UNCHECKED}
+  Pop $UseSPV
+  Push ${BST_UNCHECKED}
+  Pop $UseElectrumNMC
+  Push ${BST_UNCHECKED}
+  Pop $SkipUnbound
+
   Call FailIfBindRequirementsNotMet
 FunctionEnd
 
