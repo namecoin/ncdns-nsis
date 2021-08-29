@@ -84,8 +84,8 @@ VIAddVersionKey "FileVersion" "${NCDNS_PRODVER}"
   VIFileVersion "${NCDNS_PRODVER}"
 !endif
 VIAddVersionKey "OriginalFilename" "ncdns-install.exe"
-VIAddVersionKey "CompanyName" "Namecoin"
-VIAddVersionKey "LegalCopyright" "2017 Hugo Landau <hlandau@devever.net>"
+VIAddVersionKey "CompanyName" "Namecoin Project"
+VIAddVersionKey "LegalCopyright" "2017-2021 Namecoin Developers"
 VIAddVersionKey "LegalTrademarks" "ncdns, Namecoin"
 VIAddVersionKey "Comments" "ncdns Installer"
 
@@ -708,11 +708,12 @@ Function Reg
 
   # Uninstall information.
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "DisplayName" "Namecoin ncdns"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "DisplayVersion" "${NCDNS_PRODVER}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "UninstallString" '"$INSTDIR\uninst.exe"'
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "QuietUninstallString" '"$INSTDIR\uninst.exe" /S'
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "InstallLocation" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "DisplayIcon" "$INSTDIR\namecoin.ico"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "Publisher" "Namecoin"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "Publisher" "Namecoin Project"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "HelpLink" "https://www.namecoin.org/"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "URLInfoAbout" "https://www.namecoin.org/"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\ncdns" "NoModify" 1
