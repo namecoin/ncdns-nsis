@@ -3,6 +3,7 @@ Var NamecoinDialog
 Var NamecoinDialog_Status
 Var NamecoinDialog_Core
 Var NamecoinDialog_ConsensusJ
+Var NamecoinDialog_Electrum
 Var NamecoinDialog_Manual
 
 Function NamecoinDialog_CreateSkeleton
@@ -20,17 +21,21 @@ Function NamecoinDialog_CreateSkeleton
   Pop $NamecoinDialog_Status
 
   # Namecoin Core RadioButton
-  ${NSD_CreateRadioButton} 10u 22.5u -10u 15u "NAMECOIN_NODE_YES"
+  ${NSD_CreateRadioButton} 10u 22.5u -10u 15u "NAMECOIN_NODE_CORE"
   Pop $NamecoinDialog_Core
   ${NSD_AddStyle} $NamecoinDialog_Core ${WS_GROUP}
   ${NSD_Check} $NamecoinDialog_Core
 
   # ConsensusJ RadioButton
-  ${NSD_CreateRadioButton} 10u 37.5u -10u 15u "NAMECOIN_NODE_SPV"
+  ${NSD_CreateRadioButton} 10u 37.5u -10u 15u "NAMECOIN_NODE_CONSENSUSJ"
   Pop $NamecoinDialog_ConsensusJ
 
+  # Electrum-NMC RadioButton
+  ${NSD_CreateRadioButton} 10u 52.5u -10u 15u "NAMECOIN_NODE_ELECTRUM"
+  Pop $NamecoinDialog_Electrum
+
   # Manual RadioButton
-  ${NSD_CreateRadioButton} 10u 52.5u -10u 15u "NAMECOIN_NODE_NO"
+  ${NSD_CreateRadioButton} 10u 67.5u -10u 15u "NAMECOIN_NODE_NO"
   Pop $NamecoinDialog_Manual
 
 FunctionEnd

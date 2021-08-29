@@ -100,8 +100,10 @@ Var /GLOBAL NamecoinCoreDataDir
 Var /GLOBAL SkipNamecoinCore
 Var /GLOBAL SkipUnbound
 Var /GLOBAL UseSPV
+Var /GLOBAL UseElectrumNMC
 
 Var /GLOBAL NamecoinCoreDetected
+Var /GLOBAL ElectrumNMCDetected
 Var /GLOBAL UnboundDetected
 
 Var /GLOBAL CryptoAPIInjectionEnabled
@@ -124,6 +126,8 @@ Var /GLOBAL BitcoinJRequirementsMet
 Var /GLOBAL BitcoinJRequirementsError
 Var /GLOBAL ETLD
 
+Var /GLOBAL ElectrumNMCConfigReturnCode
+Var /GLOBAL ElectrumNMCConfigOutput
 Var /GLOBAL ServiceNcdnsCreateReturnCode
 Var /GLOBAL ServiceNcdnsSidtypeReturnCode
 Var /GLOBAL ServiceNcdnsDescriptionReturnCode
@@ -139,6 +143,7 @@ Var /GLOBAL CoreCookieFileReturnCode
 Var /GLOBAL EtcReturnCode
 Var /GLOBAL EtcConfReturnCode
 Var /GLOBAL EtcConfDReturnCode
+Var /GLOBAL EtcConfElectrumReturnCode
 Var /GLOBAL EtcConfXlogReturnCode
 Var /GLOBAL EtcZskReturnCode
 Var /GLOBAL EtcZskPrivReturnCode
@@ -178,6 +183,7 @@ Function .onInit
 
   # Detect already installed dependencies.
   Call DetectNamecoinCore
+  Call DetectElectrumNMC
   Call DetectUnbound
   Call DetectJRE
   Call DetectVC2010_x86_32
@@ -302,6 +308,20 @@ found:
 absent:
   Push 0
   Pop $NamecoinCoreDetected
+FunctionEnd
+
+Function DetectElectrumNMC
+  ClearErrors
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Electrum-NMC" "UninstallString"
+  IfErrors 0 found
+  Goto absent
+found:
+  Push 1
+  Pop $ElectrumNMCDetected
+  Return
+absent:
+  Push 0
+  Pop $ElectrumNMCDetected
 FunctionEnd
 
 Function DetectUnbound
@@ -492,14 +512,26 @@ Function NamecoinDialogCreate
     ${NSD_SetText} $NamecoinDialog_Manual "I will provide my own Namecoin node (manual configuration required)"
   ${EndIf}
 
+  ${If} $ElectrumNMCDetected == 1
+    ${NSD_SetText} $NamecoinDialog_Electrum "Automatically configure Electrum-NMC (lighter, less secure)"
+  ${Else}
+    ${NSD_SetText} $NamecoinDialog_Electrum "An existing Electrum-NMC installation was not detected."
+    EnableWindow $NamecoinDialog_Electrum 0
+  ${EndIf}
+
   nsDialogs::Show
 FunctionEnd
 
 Function NamecoinDialogLeave
   ${NSD_GetState} $NamecoinDialog_Manual $SkipNamecoinCore
   ${NSD_GetState} $NamecoinDialog_ConsensusJ $UseSPV
+  ${NSD_GetState} $NamecoinDialog_Electrum $UseElectrumNMC
 
   ${If} $UseSPV == ${BST_CHECKED}
+    StrCpy $SkipNamecoinCore 1
+  ${EndIf}
+
+  ${If} $UseElectrumNMC == ${BST_CHECKED}
     StrCpy $SkipNamecoinCore 1
   ${EndIf}
 FunctionEnd
@@ -566,6 +598,7 @@ Section "ncdns" Sec_ncdns
   Call ServiceEncaya
   Call FilesSecurePre
   Call KeyConfigDNSSEC
+  Call ElectrumNMCConfig
   Call FilesSecure
   Call FilesSecureEncayaPre
   Call KeyConfigEncaya
@@ -954,6 +987,32 @@ done:
 FunctionEnd
 
 
+# ELECTRUM-NMC CONFIG
+##############################################################################
+Function ElectrumNMCConfig
+  ${If} $UseElectrumNMC == ${BST_UNCHECKED}
+    DetailPrint "Not configuring Electrum-NMC."
+    Return
+  ${EndIf}
+
+  DetailPrint "Configuring Electrum-NMC..."
+
+  DetailPrint "Setting Electrum-NMC static port..."
+  File /oname=$PLUGINSDIR\configelectrum.ps1 configelectrum.ps1
+  nsExec::ExecToStack 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configelectrum.ps1"'
+  Pop $ElectrumNMCConfigReturnCode
+  Pop $ElectrumNMCConfigOutput
+  Delete $PLUGINSDIR\configelectrum.ps1
+
+  DetailPrint "Granting ncdns access to Electrum-NMC..."
+  FileOpen $4 "$INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf" w
+  FileWrite $4 "$ElectrumNMCConfigOutput"
+  FileClose $4
+
+  DetailPrint "Configured Electrum-NMC."
+FunctionEnd
+
+
 # FILE INSTALLATION/UNINSTALLATION
 ##############################################################################
 Function Files
@@ -1028,6 +1087,15 @@ Function FilesSecure
     DetailPrint "Failed to set ACL on ncdns config dir: return code $EtcConfDReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns config dir." /SD IDOK
     Abort
+  ${EndIf}
+  ${If} $UseElectrumNMC == ${BST_CHECKED}
+    ${ExecToLog} 'icacls "$INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf" /reset'
+    Pop $EtcConfElectrumReturnCode
+    ${If} $EtcConfElectrumReturnCode != 0
+      DetailPrint "Failed to set ACL on ncdns electrum-nmc config: return code $EtcConfElectrumReturnCode"
+      MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncdns electrum-nmc config." /SD IDOK
+      Abort
+    ${EndIf}
   ${EndIf}
   ${ExecToLog} 'icacls "$INSTDIR\etc\ncdns.conf.d\xlog.conf" /reset'
   Pop $EtcConfXlogReturnCode
@@ -1173,6 +1241,7 @@ Function un.Files
   Delete $INSTDIR\bin\nghttp2.dll
   Delete $INSTDIR\bin\uv.dll
 
+  Delete $INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf
   Delete $INSTDIR\etc\ncdns.conf.d\xlog.conf
   Delete $INSTDIR\etc\ncdns.conf
   Delete $INSTDIR\etc\ksk\bit.private
