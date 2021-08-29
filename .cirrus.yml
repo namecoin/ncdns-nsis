@@ -39,6 +39,7 @@ task:
     - mkdir -p build64/artifacts/
     - cd build64/artifacts/
     - curl -o bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
+    - curl -o electrum-nmc-setup.exe https://www.namecoin.org/files/electrum-nmc/electrum-nmc-3.3.10/electrum-nmc-nc3.3.10-setup.exe
     - curl -o certinject--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/certinject/Cross-Compile%20Go%20latest/binaries/dist/certinject--windows_amd64.tar.gz
     - tar -xaf certinject--windows_amd64.tar.gz
     - mv certinject--windows_amd64/bin/certinject.exe ./

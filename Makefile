@@ -36,6 +36,11 @@ ifeq ($(NO_NAMECOIN_CORE),1)
 	_NO_NAMECOIN_CORE=-DNO_NAMECOIN_CORE
 endif
 
+_NO_ELECTRUM_NMC=
+ifeq ($(NO_ELECTRUM_NMC),1)
+	_NO_ELECTRUM_NMC=-DNO_ELECTRUM_NMC
+endif
+
 _NO_DNSSEC_TRIGGER=
 ifeq ($(NO_DNSSEC_TRIGGER),1)
 	_NO_DNSSEC_TRIGGER=-DNO_DNSSEC_TRIGGER
@@ -114,16 +119,22 @@ $(ARTIFACTS)/$(NAMECOIN_FN):
 	wget -O "$@" "https://namecoin.org/files/namecoin-core-$(NAMECOIN_VER)$(NAMECOIN_VER_TAG)/$(NAMECOIN_FN)"
 
 
+### ELECTRUM-NMC
+##############################################################################
+ELECTRUM_NMC_FN=electrum-nmc-setup.exe
+
+
 ### INSTALLER
 ##############################################################################
 $(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(KGFILES_A) $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe
 	@mkdir -p "$(BUILD)/bin"
 	$(MAKENSIS) $(NSISFLAGS) -DPOSIX_BUILD=1 -DNCDNS_PRODVER=$(NCDNS_PRODVER_W) \
-		$(_NCDNS_64BIT) $(_NO_NAMECOIN_CORE) $(_NO_DNSSEC_TRIGGER) $(_NCDNS_LOGGING) \
+		$(_NCDNS_64BIT) $(_NO_NAMECOIN_CORE) $(_NO_ELECTRUM_NMC) $(_NO_DNSSEC_TRIGGER) $(_NCDNS_LOGGING) \
 		-DARTIFACTS=$(BUILD)/artifacts \
 		-DNEUTRAL_ARTIFACTS=artifacts \
 		-DDNSSEC_TRIGGER_FN=$(DNSSEC_TRIGGER_FN) \
 		-DNAMECOIN_FN=$(NAMECOIN_FN) \
+		-DELECTRUM_NMC_FN=$(ELECTRUM_NMC_FN) \
 		-DOUTFN="$(OUTFN)" "$<"
 
 clean:
