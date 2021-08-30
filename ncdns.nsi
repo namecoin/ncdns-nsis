@@ -198,15 +198,25 @@ Function .onInit
 
   Call DetectETLD
 
-  # Default components
+  # Default components: Namecoin
   Push ${BST_CHECKED}
   Pop $UseNamecoinCore
   Push ${BST_UNCHECKED}
   Pop $UseSPV
   Push ${BST_UNCHECKED}
   Pop $UseElectrumNMC
+
+  # Default components: DNS
   Push ${BST_UNCHECKED}
   Pop $SkipUnbound
+
+  # Default components: TLS
+  Push ${BST_CHECKED}
+  Pop $CryptoAPIInjectionEnabled
+  Push ${BST_CHECKED}
+  Pop $CryptoAPIEncayaEnabled
+  Push ${BST_CHECKED}
+  Pop $CryptoAPINameConstraintsEnabled
 
   Call FailIfBindRequirementsNotMet
 FunctionEnd
