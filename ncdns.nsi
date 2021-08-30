@@ -98,8 +98,8 @@ Var /GLOBAL DNSSECTriggerUninstallCommand
 Var /GLOBAL NamecoinCoreUninstallCommand
 Var /GLOBAL ElectrumNMCUninstallCommand
 Var /GLOBAL NamecoinCoreDataDir
-Var /GLOBAL SkipNamecoinCore
 Var /GLOBAL SkipUnbound
+Var /GLOBAL UseNamecoinCore
 Var /GLOBAL UseSPV
 Var /GLOBAL UseElectrumNMC
 
@@ -199,8 +199,8 @@ Function .onInit
   Call DetectETLD
 
   # Default components
-  Push ${BST_UNCHECKED}
-  Pop $SkipNamecoinCore
+  Push ${BST_CHECKED}
+  Pop $UseNamecoinCore
   Push ${BST_UNCHECKED}
   Pop $UseSPV
   Push ${BST_UNCHECKED}
@@ -533,17 +533,9 @@ Function NamecoinDialogCreate
 FunctionEnd
 
 Function NamecoinDialogLeave
-  ${NSD_GetState} $NamecoinDialog_Manual $SkipNamecoinCore
+  ${NSD_GetState} $NamecoinDialog_Core $UseNamecoinCore
   ${NSD_GetState} $NamecoinDialog_ConsensusJ $UseSPV
   ${NSD_GetState} $NamecoinDialog_Electrum $UseElectrumNMC
-
-  ${If} $UseSPV == ${BST_CHECKED}
-    StrCpy $SkipNamecoinCore 1
-  ${EndIf}
-
-  ${If} $UseElectrumNMC == ${BST_CHECKED}
-    StrCpy $SkipNamecoinCore 1
-  ${EndIf}
 FunctionEnd
 
 Function DNSDialogCreate
@@ -798,7 +790,7 @@ FunctionEnd
 # NAMECOIN CORE CONFIG
 ##############################################################################
 Function NamecoinCoreConfig
-  ${If} $SkipNamecoinCore == 1
+  ${If} $UseNamecoinCore == ${BST_UNCHECKED}
     DetailPrint "Not configuring Namecoin Core."
     Return
   ${EndIf}
@@ -877,7 +869,7 @@ Function NamecoinCore
   ${EndIf}
   DetailPrint "An existing Namecoin Core installation was NOT detected."
 
-  ${If} $SkipNamecoinCore == ${BST_CHECKED}
+  ${If} $UseNamecoinCore == ${BST_UNCHECKED}
     DetailPrint "Not installing Namecoin Core."
     Return
   ${EndIf}
@@ -1130,7 +1122,7 @@ Function Files
 FunctionEnd
 
 Function FilesConfig
-  ${If} $SkipNamecoinCore == 1
+  ${If} $UseNamecoinCore == ${BST_UNCHECKED}
     DetailPrint "Not configuring use of cookie auth."
     Return
   ${EndIf}
