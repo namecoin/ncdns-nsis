@@ -22,7 +22,6 @@ Function DNSDialog_CreateSkeleton
   ${NSD_CreateRadioButton} 10u 22.5u -10u 15u "UNBOUND_YES"
   Pop $DNSDialog_Unbound
   ${NSD_AddStyle} $DNSDialog_Unbound ${WS_GROUP}
-  ${NSD_Check} $DNSDialog_Unbound
 
   # Manual RadioButton
   ${NSD_CreateRadioButton} 10u 37.5u -10u 15u "UNBOUND_NO"

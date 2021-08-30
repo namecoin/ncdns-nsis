@@ -500,6 +500,12 @@ FunctionEnd
 Function NamecoinDialogCreate
   Call NamecoinDialog_CreateSkeleton
 
+  # Restore state
+  ${NSD_SetState} $NamecoinDialog_Manual ${BST_CHECKED}
+  ${NSD_SetState} $NamecoinDialog_Core $UseNamecoinCore
+  ${NSD_SetState} $NamecoinDialog_ConsensusJ $UseSPV
+  ${NSD_SetState} $NamecoinDialog_Electrum $UseElectrumNMC
+
   ${If} $NamecoinCoreDetected == 1
     ${NSD_SetText} $NamecoinDialog_Status "An existing Namecoin Core installation was detected."
     ${NSD_SetText} $NamecoinDialog_Core "Automatically configure Namecoin Core (recommended)"
@@ -541,6 +547,10 @@ FunctionEnd
 Function DNSDialogCreate
   Call DNSDialog_CreateSkeleton
 
+  # Restore state
+  ${NSD_SetState} $DNSDialog_Unbound ${BST_CHECKED}
+  ${NSD_SetState} $DNSDialog_Manual $SkipUnbound
+
   ${If} $UnboundDetected == 1
     ${NSD_SetText} $DNSDialog_Status "An existing Unbound installation was detected."
     ${NSD_SetText} $DNSDialog_Unbound "Automatically configure Unbound (recommended)"
@@ -561,6 +571,10 @@ FunctionEnd
 Function TLSPositiveDialogCreate
   Call TLSPositiveDialog_CreateSkeleton
 
+  # Restore state
+  ${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
+  ${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer2 $CryptoAPIEncayaEnabled
+
   nsDialogs::Show
 FunctionEnd
 
@@ -571,6 +585,9 @@ FunctionEnd
 
 Function TLSNegativeDialogCreate
   Call TLSNegativeDialog_CreateSkeleton
+
+  # Restore state
+  ${NSD_SetState} $TLSNegativeDialog_CryptoAPINCProp $CryptoAPINameConstraintsEnabled
 
   nsDialogs::Show
 FunctionEnd
