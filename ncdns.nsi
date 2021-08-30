@@ -100,7 +100,7 @@ Var /GLOBAL ElectrumNMCUninstallCommand
 Var /GLOBAL NamecoinCoreDataDir
 Var /GLOBAL SkipUnbound
 Var /GLOBAL UseNamecoinCore
-Var /GLOBAL UseSPV
+Var /GLOBAL UseConsensusJ
 Var /GLOBAL UseElectrumNMC
 
 Var /GLOBAL NamecoinCoreDetected
@@ -202,7 +202,7 @@ Function .onInit
   Push ${BST_CHECKED}
   Pop $UseNamecoinCore
   Push ${BST_UNCHECKED}
-  Pop $UseSPV
+  Pop $UseConsensusJ
   Push ${BST_UNCHECKED}
   Pop $UseElectrumNMC
 
@@ -513,7 +513,7 @@ Function NamecoinDialogCreate
   # Restore state
   ${NSD_SetState} $NamecoinDialog_Manual ${BST_CHECKED}
   ${NSD_SetState} $NamecoinDialog_Core $UseNamecoinCore
-  ${NSD_SetState} $NamecoinDialog_ConsensusJ $UseSPV
+  ${NSD_SetState} $NamecoinDialog_ConsensusJ $UseConsensusJ
   ${NSD_SetState} $NamecoinDialog_Electrum $UseElectrumNMC
 
   ${If} $NamecoinCoreDetected == 1
@@ -550,7 +550,7 @@ FunctionEnd
 
 Function NamecoinDialogLeave
   ${NSD_GetState} $NamecoinDialog_Core $UseNamecoinCore
-  ${NSD_GetState} $NamecoinDialog_ConsensusJ $UseSPV
+  ${NSD_GetState} $NamecoinDialog_ConsensusJ $UseConsensusJ
   ${NSD_GetState} $NamecoinDialog_Electrum $UseElectrumNMC
 FunctionEnd
 
@@ -1033,7 +1033,7 @@ FunctionEnd
 ##############################################################################
 Function BitcoinJ
 !ifndef NO_BITCOINJ
-  ${If} $UseSPV == ${BST_UNCHECKED}
+  ${If} $UseConsensusJ == ${BST_UNCHECKED}
     # User did not elect to use SPV.
     DetailPrint "Not installing ConsensusJ-Namecoin."
     Return
