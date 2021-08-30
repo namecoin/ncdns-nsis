@@ -98,7 +98,7 @@ Var /GLOBAL DNSSECTriggerUninstallCommand
 Var /GLOBAL NamecoinCoreUninstallCommand
 Var /GLOBAL ElectrumNMCUninstallCommand
 Var /GLOBAL NamecoinCoreDataDir
-Var /GLOBAL SkipUnbound
+Var /GLOBAL UseUnbound
 Var /GLOBAL UseNamecoinCore
 Var /GLOBAL UseConsensusJ
 Var /GLOBAL UseElectrumNMC
@@ -207,8 +207,8 @@ Function .onInit
   Pop $UseElectrumNMC
 
   # Default components: DNS
-  Push ${BST_UNCHECKED}
-  Pop $SkipUnbound
+  Push ${BST_CHECKED}
+  Pop $UseUnbound
 
   # Default components: TLS
   Push ${BST_CHECKED}
@@ -558,8 +558,8 @@ Function DNSDialogCreate
   Call DNSDialog_CreateSkeleton
 
   # Restore state
-  ${NSD_SetState} $DNSDialog_Unbound ${BST_CHECKED}
-  ${NSD_SetState} $DNSDialog_Manual $SkipUnbound
+  ${NSD_SetState} $DNSDialog_Manual ${BST_CHECKED}
+  ${NSD_SetState} $DNSDialog_Unbound $UseUnbound
 
   ${If} $UnboundDetected == 1
     ${NSD_SetText} $DNSDialog_Status "An existing Unbound installation was detected."
@@ -575,7 +575,7 @@ Function DNSDialogCreate
 FunctionEnd
 
 Function DNSDialogLeave
-  ${NSD_GetState} $DNSDialog_Manual $SkipUnbound
+  ${NSD_GetState} $DNSDialog_Unbound $UseUnbound
 FunctionEnd
 
 Function TLSPositiveDialogCreate
@@ -751,10 +751,12 @@ FunctionEnd
 Function DNSSECTrigger
 !ifndef NO_DNSSEC_TRIGGER
   ${If} $UnboundDetected == 1
-    # Already have DNSSEC Trigger
+    # Already have Unbound
+    DetailPrint "An existing Unbound installation was detected. Not installing."
     Return
   ${EndIf}
-  ${If} $SkipUnbound == ${BST_CHECKED}
+  ${If} $UseUnbound == ${BST_UNCHECKED}
+    DetailPrint "Not installing DNSSEC Trigger."
     Return
   ${EndIf}
 
@@ -1541,7 +1543,8 @@ FunctionEnd
 # UNBOUND CONFIGURATION
 ##############################################################################
 Function UnboundConfig
-  ${If} $SkipUnbound == 1
+  ${If} $UseUnbound == ${BST_UNCHECKED}
+    DetailPrint "Not configuring Unbound."
     Return
   ${EndIf}
 
