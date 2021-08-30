@@ -98,9 +98,9 @@ Var /GLOBAL DNSSECTriggerUninstallCommand
 Var /GLOBAL NamecoinCoreUninstallCommand
 Var /GLOBAL ElectrumNMCUninstallCommand
 Var /GLOBAL NamecoinCoreDataDir
-Var /GLOBAL SkipNamecoinCore
-Var /GLOBAL SkipUnbound
-Var /GLOBAL UseSPV
+Var /GLOBAL UseUnbound
+Var /GLOBAL UseNamecoinCore
+Var /GLOBAL UseConsensusJ
 Var /GLOBAL UseElectrumNMC
 
 Var /GLOBAL NamecoinCoreDetected
@@ -207,15 +207,25 @@ win7okay:
 
   Call DetectETLD
 
-  # Default components
+  # Default components: Namecoin
+  Push ${BST_CHECKED}
+  Pop $UseNamecoinCore
   Push ${BST_UNCHECKED}
-  Pop $SkipNamecoinCore
-  Push ${BST_UNCHECKED}
-  Pop $UseSPV
+  Pop $UseConsensusJ
   Push ${BST_UNCHECKED}
   Pop $UseElectrumNMC
-  Push ${BST_UNCHECKED}
-  Pop $SkipUnbound
+
+  # Default components: DNS
+  Push ${BST_CHECKED}
+  Pop $UseUnbound
+
+  # Default components: TLS
+  Push ${BST_CHECKED}
+  Pop $CryptoAPIInjectionEnabled
+  Push ${BST_CHECKED}
+  Pop $CryptoAPIEncayaEnabled
+  Push ${BST_CHECKED}
+  Pop $CryptoAPINameConstraintsEnabled
 
   Call FailIfBindRequirementsNotMet
 FunctionEnd
@@ -509,6 +519,18 @@ FunctionEnd
 Function NamecoinDialogCreate
   Call NamecoinDialog_CreateSkeleton
 
+  # Restore state
+  ${NSD_SetState} $NamecoinDialog_Core $UseNamecoinCore
+  ${NSD_SetState} $NamecoinDialog_ConsensusJ $UseConsensusJ
+  ${NSD_SetState} $NamecoinDialog_Electrum $UseElectrumNMC
+  ${If} $UseNamecoinCore == ${BST_UNCHECKED}
+  ${AndIf} $UseConsensusJ == ${BST_UNCHECKED}
+  ${AndIf} $UseElectrumNMC == ${BST_UNCHECKED}
+    ${NSD_Check} $NamecoinDialog_Manual
+  ${Else}
+    ${NSD_Uncheck} $NamecoinDialog_Manual
+  ${EndIf}
+
   ${If} $NamecoinCoreDetected == 1
     ${NSD_SetText} $NamecoinDialog_Status "An existing Namecoin Core installation was detected."
     ${NSD_SetText} $NamecoinDialog_Core "Automatically configure Namecoin Core (recommended)"
@@ -542,21 +564,21 @@ Function NamecoinDialogCreate
 FunctionEnd
 
 Function NamecoinDialogLeave
-  ${NSD_GetState} $NamecoinDialog_Manual $SkipNamecoinCore
-  ${NSD_GetState} $NamecoinDialog_ConsensusJ $UseSPV
+  ${NSD_GetState} $NamecoinDialog_Core $UseNamecoinCore
+  ${NSD_GetState} $NamecoinDialog_ConsensusJ $UseConsensusJ
   ${NSD_GetState} $NamecoinDialog_Electrum $UseElectrumNMC
-
-  ${If} $UseSPV == ${BST_CHECKED}
-    StrCpy $SkipNamecoinCore 1
-  ${EndIf}
-
-  ${If} $UseElectrumNMC == ${BST_CHECKED}
-    StrCpy $SkipNamecoinCore 1
-  ${EndIf}
 FunctionEnd
 
 Function DNSDialogCreate
   Call DNSDialog_CreateSkeleton
+
+  # Restore state
+  ${NSD_SetState} $DNSDialog_Unbound $UseUnbound
+  ${If} $UseUnbound == ${BST_UNCHECKED}
+    ${NSD_Check} $DNSDialog_Manual
+  ${Else}
+    ${NSD_Uncheck} $DNSDialog_Manual
+  ${EndIf}
 
   ${If} $UnboundDetected == 1
     ${NSD_SetText} $DNSDialog_Status "An existing Unbound installation was detected."
@@ -572,11 +594,15 @@ Function DNSDialogCreate
 FunctionEnd
 
 Function DNSDialogLeave
-  ${NSD_GetState} $DNSDialog_Manual $SkipUnbound
+  ${NSD_GetState} $DNSDialog_Unbound $UseUnbound
 FunctionEnd
 
 Function TLSPositiveDialogCreate
   Call TLSPositiveDialog_CreateSkeleton
+
+  # Restore state
+  ${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
+  ${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer2 $CryptoAPIEncayaEnabled
 
   nsDialogs::Show
 FunctionEnd
@@ -588,6 +614,9 @@ FunctionEnd
 
 Function TLSNegativeDialogCreate
   Call TLSNegativeDialog_CreateSkeleton
+
+  # Restore state
+  ${NSD_SetState} $TLSNegativeDialog_CryptoAPINCProp $CryptoAPINameConstraintsEnabled
 
   nsDialogs::Show
 FunctionEnd
@@ -742,10 +771,12 @@ FunctionEnd
 Function DNSSECTrigger
 !ifndef NO_DNSSEC_TRIGGER
   ${If} $UnboundDetected == 1
-    # Already have DNSSEC Trigger
+    # Already have Unbound
+    DetailPrint "An existing Unbound installation was detected. Not installing."
     Return
   ${EndIf}
-  ${If} $SkipUnbound == ${BST_CHECKED}
+  ${If} $UseUnbound == ${BST_UNCHECKED}
+    DetailPrint "Not installing DNSSEC Trigger."
     Return
   ${EndIf}
 
@@ -808,7 +839,7 @@ FunctionEnd
 # NAMECOIN CORE CONFIG
 ##############################################################################
 Function NamecoinCoreConfig
-  ${If} $SkipNamecoinCore == 1
+  ${If} $UseNamecoinCore == ${BST_UNCHECKED}
     DetailPrint "Not configuring Namecoin Core."
     Return
   ${EndIf}
@@ -887,7 +918,7 @@ Function NamecoinCore
   ${EndIf}
   DetailPrint "An existing Namecoin Core installation was NOT detected."
 
-  ${If} $SkipNamecoinCore == ${BST_CHECKED}
+  ${If} $UseNamecoinCore == ${BST_UNCHECKED}
     DetailPrint "Not installing Namecoin Core."
     Return
   ${EndIf}
@@ -1024,7 +1055,7 @@ FunctionEnd
 ##############################################################################
 Function BitcoinJ
 !ifndef NO_BITCOINJ
-  ${If} $UseSPV == ${BST_UNCHECKED}
+  ${If} $UseConsensusJ == ${BST_UNCHECKED}
     # User did not elect to use SPV.
     DetailPrint "Not installing ConsensusJ-Namecoin."
     Return
@@ -1140,7 +1171,7 @@ Function Files
 FunctionEnd
 
 Function FilesConfig
-  ${If} $SkipNamecoinCore == 1
+  ${If} $UseNamecoinCore == ${BST_UNCHECKED}
     DetailPrint "Not configuring use of cookie auth."
     Return
   ${EndIf}
@@ -1532,7 +1563,8 @@ FunctionEnd
 # UNBOUND CONFIGURATION
 ##############################################################################
 Function UnboundConfig
-  ${If} $SkipUnbound == 1
+  ${If} $UseUnbound == ${BST_UNCHECKED}
+    DetailPrint "Not configuring Unbound."
     Return
   ${EndIf}
 

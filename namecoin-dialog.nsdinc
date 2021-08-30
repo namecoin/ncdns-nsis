@@ -24,7 +24,6 @@ Function NamecoinDialog_CreateSkeleton
   ${NSD_CreateRadioButton} 10u 22.5u -10u 15u "NAMECOIN_NODE_CORE"
   Pop $NamecoinDialog_Core
   ${NSD_AddStyle} $NamecoinDialog_Core ${WS_GROUP}
-  ${NSD_Check} $NamecoinDialog_Core
 
   # ConsensusJ RadioButton
   ${NSD_CreateRadioButton} 10u 37.5u -10u 15u "NAMECOIN_NODE_CONSENSUSJ"
