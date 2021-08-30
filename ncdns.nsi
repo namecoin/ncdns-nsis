@@ -511,10 +511,16 @@ Function NamecoinDialogCreate
   Call NamecoinDialog_CreateSkeleton
 
   # Restore state
-  ${NSD_SetState} $NamecoinDialog_Manual ${BST_CHECKED}
   ${NSD_SetState} $NamecoinDialog_Core $UseNamecoinCore
   ${NSD_SetState} $NamecoinDialog_ConsensusJ $UseConsensusJ
   ${NSD_SetState} $NamecoinDialog_Electrum $UseElectrumNMC
+  ${If} $UseNamecoinCore == ${BST_UNCHECKED}
+  ${AndIf} $UseConsensusJ == ${BST_UNCHECKED}
+  ${AndIf} $UseElectrumNMC == ${BST_UNCHECKED}
+    ${NSD_Check} $NamecoinDialog_Manual
+  ${Else}
+    ${NSD_Uncheck} $NamecoinDialog_Manual
+  ${EndIf}
 
   ${If} $NamecoinCoreDetected == 1
     ${NSD_SetText} $NamecoinDialog_Status "An existing Namecoin Core installation was detected."
@@ -558,8 +564,12 @@ Function DNSDialogCreate
   Call DNSDialog_CreateSkeleton
 
   # Restore state
-  ${NSD_SetState} $DNSDialog_Manual ${BST_CHECKED}
   ${NSD_SetState} $DNSDialog_Unbound $UseUnbound
+  ${If} $UseUnbound == ${BST_UNCHECKED}
+    ${NSD_Check} $DNSDialog_Manual
+  ${Else}
+    ${NSD_Uncheck} $DNSDialog_Manual
+  ${EndIf}
 
   ${If} $UnboundDetected == 1
     ${NSD_SetText} $DNSDialog_Status "An existing Unbound installation was detected."
