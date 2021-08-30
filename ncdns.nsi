@@ -174,6 +174,15 @@ Function .onInit
     Abort
   ${EndIf}
 
+  # verifyctl.cmd uses "certutil -v -f -verifyCTL AuthRootWU".
+  # The verifyCTL command exists on Windows 8.0 Pro Build 9200, but is
+  # unavailable on Windows 7 and Windows Server 2008 R2 Standard Full.
+  ${IfNot} ${AtLeastWin8}
+    MessageBox "MB_OKCANCEL|MB_ICONEXCLAMATION" "ncdns works best with Windows 8 or later.  If you install ncdns, you will have degraded security.  Would you like to continue installing anyway?" /SD IDOK IDOK win7okay IDCANCEL 0
+    Abort
+win7okay:
+  ${EndIf}
+
   SetShellVarContext all
 
   # Make sections mandatory.
