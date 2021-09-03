@@ -38,6 +38,9 @@ task:
     # TODO: remove this, download ConsensusJ-Namecoin, certinject, Encaya, and generate_nmc_cert like we do everything else.
     - mkdir -p build64/artifacts/
     - cd build64/artifacts/
+    # Namecoin Core
+    - LATEST_NAMECOIN_CORE_VERSION=$(curl https://www.namecoin.org/download/ | grep --only-matching -E 'namecoin-core-[0-9\.]+' | head --lines=1 | grep --only-matching -E '[0-9\.]+')
+    - curl -o namecoin-win64-setup-unsigned.exe https://www.namecoin.org/files/namecoin-core/namecoin-core-$LATEST_NAMECOIN_CORE_VERSION/namecoin-nc$LATEST_NAMECOIN_CORE_VERSION-win64-setup-unsigned.exe
     # ConsensusJ
     - curl -o bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
     # Electrum-NMC

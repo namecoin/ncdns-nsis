@@ -88,12 +88,7 @@ $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN):
 
 ### NAMECOIN
 ##############################################################################
-NAMECOIN_VER=0.13.99
-NAMECOIN_VER_TAG=-name-tab-beta1-notreproduced
-NAMECOIN_FN=namecoin-$(NAMECOIN_VER)-$(NCARCH)-setup-unsigned.exe
-
-$(ARTIFACTS)/$(NAMECOIN_FN):
-	wget -O "$@" "https://namecoin.org/files/namecoin-core-$(NAMECOIN_VER)$(NAMECOIN_VER_TAG)/$(NAMECOIN_FN)"
+NAMECOIN_FN=namecoin-win64-setup-unsigned.exe
 
 
 ### ELECTRUM-NMC
@@ -103,7 +98,7 @@ ELECTRUM_NMC_FN=electrum-nmc-setup.exe
 
 ### INSTALLER
 ##############################################################################
-$(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe
+$(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/q.exe
 	@mkdir -p "$(BUILD)/bin"
 	$(MAKENSIS) $(NSISFLAGS) -DPOSIX_BUILD=1 -DNCDNS_PRODVER=$(NCDNS_PRODVER_W) \
 		$(_NCDNS_64BIT) $(_NO_NAMECOIN_CORE) $(_NO_ELECTRUM_NMC) $(_NO_DNSSEC_TRIGGER) $(_NCDNS_LOGGING) \
