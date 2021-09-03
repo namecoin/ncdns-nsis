@@ -1156,7 +1156,6 @@ Function Files
   File /oname=$INSTDIR\bin\libisccfg.dll ${ARTIFACTS}\libisccfg.dll
   File /oname=$INSTDIR\bin\libssl-1_1-x64.dll ${ARTIFACTS}\libssl-1_1-x64.dll
   File /oname=$INSTDIR\bin\libxml2.dll ${ARTIFACTS}\libxml2.dll
-  File /oname=$INSTDIR\bin\nghttp2.dll ${ARTIFACTS}\nghttp2.dll
   File /oname=$INSTDIR\bin\uv.dll ${ARTIFACTS}\uv.dll
 
 #!if /FileExists "${ARTIFACTS}\ncdt.exe"
@@ -1361,7 +1360,6 @@ Function un.Files
   Delete $INSTDIR\bin\libisccfg.dll
   Delete $INSTDIR\bin\libssl-1_1-x64.dll
   Delete $INSTDIR\bin\libxml2.dll
-  Delete $INSTDIR\bin\nghttp2.dll
   Delete $INSTDIR\bin\uv.dll
 
   Delete $INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf

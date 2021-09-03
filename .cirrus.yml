@@ -38,24 +38,38 @@ task:
     # TODO: remove this, download ConsensusJ-Namecoin, certinject, Encaya, and generate_nmc_cert like we do everything else.
     - mkdir -p build64/artifacts/
     - cd build64/artifacts/
+    # ConsensusJ
     - curl -o bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
+    # Electrum-NMC
     - curl -o electrum-nmc-setup.exe https://www.namecoin.org/files/electrum-nmc/electrum-nmc-3.3.10/electrum-nmc-nc3.3.10-setup.exe
+    # BIND
+    # As per https://www.isc.org/download/#BIND , "9.16.x is the last branch of
+    # BIND with native Windows support."
+    - LATEST_BIND_VERSION=$(curl https://ftp.isc.org/isc/bind/ | grep --only-matching '"[0-9]*\.[0-9]*\.[0-9]*/"' | grep '9\.16' | tail --lines=1 | grep --only-matching '[0-9]*\.[0-9]*\.[0-9]*')
+    - curl -o bind.zip https://ftp.isc.org/isc/bind/$LATEST_BIND_VERSION/BIND$LATEST_BIND_VERSION.x64.zip
+    - unzip bind.zip
+    - rm bind.zip
+    # certinject
     - curl -o certinject--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/certinject/Cross-Compile%20Go%20latest/binaries/dist/certinject--windows_amd64.tar.gz
     - tar -xaf certinject--windows_amd64.tar.gz
     - mv certinject--windows_amd64/bin/certinject.exe ./
     - rm -rf certinject--windows_amd64/
+    # Encaya
     - curl -o encaya--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/encaya/Cross-Compile%20Go%20latest/binaries/dist/encaya--windows_amd64.tar.gz
     - tar -xaf encaya--windows_amd64.tar.gz
     - mv encaya--windows_amd64/bin/*.exe ./
     - rm -rf encaya--windows_amd64/
+    # generate_nmc_cert
     - curl -o generate_nmc_cert--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/generate_nmc_cert/Cross-Compile%20Go%20latest/binaries/dist/generate_nmc_cert--windows_amd64.tar.gz
     - tar -xaf generate_nmc_cert--windows_amd64.tar.gz
     - mv generate_nmc_cert--windows_amd64/bin/*.exe ./
     - rm -rf generate_nmc_cert--windows_amd64/
+    # qlib
     - curl -o qlib--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/qlib/Cross-Compile%20Go%20latest/binaries/dist/qlib--windows_amd64.tar.gz
     - tar -xaf qlib--windows_amd64.tar.gz
     - mv qlib--windows_amd64/bin/*.exe ./
     - rm -rf qlib--windows_amd64/
+    # ncdns
     - curl -o ncdns--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/ncdns/Cross-Compile%20Go%20latest/binaries/dist/ncdns--windows_amd64.tar.gz
     - tar -xaf ncdns--windows_amd64.tar.gz
     - mv ncdns--windows_amd64/bin/*.exe ./

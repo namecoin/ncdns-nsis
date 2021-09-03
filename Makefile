@@ -75,29 +75,6 @@ OUTFN := $(BUILD)/bin/ncdns-$(NCDNS_PRODVER)-$(NCARCH)-install.exe
 all: $(OUTFN)
 
 
-### DNSSEC-KEYGEN
-##############################################################################
-# When bumping the BIND version, make sure to test whether its Visual C++
-# dependency has changed version, and change the detection functions in the
-# NSIS script accordingly.  Also make sure you test both the 32-bit and 64-bit
-# versions for bumped Visual C++ dependencies; sometimes they might be bumped
-# independently.  Also make sure you test for *multiple* Visual C++
-# dependencies; sometimes a single program might link against multiple Visual
-# C++ dependencies.
-BINDV=9.17.11
-$(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip:
-	wget -O "$@" "https://ftp.isc.org/isc/bind/$(BINDV)/BIND$(BINDV).$(BINDARCH).zip"
-
-KGFILES=dnssec-keygen.exe libcrypto-1_1-x64.dll libdns.dll libisc.dll libisccfg.dll libssl-1_1-x64.dll libxml2.dll nghttp2.dll uv.dll
-KGFILES_T=$(foreach k,$(KGFILES),tmp/$(k))
-KGFILES_A=$(foreach k,$(KGFILES),$(ARTIFACTS)/$(k))
-
-$(ARTIFACTS)/dnssec-keygen.exe: $(ARTIFACTS)/BIND$(BINDV).$(BINDARCH).zip
-	(cd "$(ARTIFACTS)"; mkdir tmp; cd tmp; unzip "../BIND$(BINDV).$(BINDARCH).zip"; cd ..; mv $(KGFILES_T) .; rm -rf tmp;)
-
-.NOTPARALLEL: $(KGFILES_A)
-
-
 ### DNSSEC-TRIGGER
 ##############################################################################
 DNSSEC_TRIGGER_VER=0.17
@@ -126,7 +103,7 @@ ELECTRUM_NMC_FN=electrum-nmc-setup.exe
 
 ### INSTALLER
 ##############################################################################
-$(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(KGFILES_A) $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe
+$(OUTFN): ncdns.nsi $(NEUTRAL_ARTIFACTS)/ncdns.conf $(ARTIFACTS)/$(DNSSEC_TRIGGER_FN) $(ARTIFACTS)/$(NAMECOIN_FN) $(ARTIFACTS)/q.exe
 	@mkdir -p "$(BUILD)/bin"
 	$(MAKENSIS) $(NSISFLAGS) -DPOSIX_BUILD=1 -DNCDNS_PRODVER=$(NCDNS_PRODVER_W) \
 		$(_NCDNS_64BIT) $(_NO_NAMECOIN_CORE) $(_NO_ELECTRUM_NMC) $(_NO_DNSSEC_TRIGGER) $(_NCDNS_LOGGING) \
