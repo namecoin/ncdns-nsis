@@ -42,6 +42,13 @@ task:
     - curl -o bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
     # Electrum-NMC
     - curl -o electrum-nmc-setup.exe https://www.namecoin.org/files/electrum-nmc/electrum-nmc-3.3.10/electrum-nmc-nc3.3.10-setup.exe
+    # BIND
+    # As per https://www.isc.org/download/#BIND , "9.16.x is the last branch of
+    # BIND with native Windows support."
+    - LATEST_BIND_VERSION=$(curl https://ftp.isc.org/isc/bind/ | grep --only-matching '"[0-9]*\.[0-9]*\.[0-9]*/"' | grep '9\.16' | tail --lines=1 | grep --only-matching '[0-9]*\.[0-9]*\.[0-9]*')
+    - curl -o bind.zip https://ftp.isc.org/isc/bind/$LATEST_BIND_VERSION/BIND$LATEST_BIND_VERSION.x64.zip
+    - unzip bind.zip
+    - rm bind.zip
     # certinject
     - curl -o certinject--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/certinject/Cross-Compile%20Go%20latest/binaries/dist/certinject--windows_amd64.tar.gz
     - tar -xaf certinject--windows_amd64.tar.gz
