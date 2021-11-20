@@ -1569,26 +1569,41 @@ Function UnboundConfig
   # Detect dnssec-trigger/Unbound installation.
   ClearErrors
   ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\DnssecTrigger" "InstallLocation"
-  IfErrors 0 found
-  ReadRegStr $UnboundConfPath HKLM "Software\DnssecTrigger" "InstallLocation"
-  IfErrors 0 found
-  ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\Unbound" "InstallLocation"
-  IfErrors 0 found
-  ReadRegStr $UnboundConfPath HKLM "Software\Unbound" "InstallLocation"
-  IfErrors 0 found
-not_found:
-  DetailPrint "*** dnssec-trigger installation was NOT found, not configuring Unbound."
-  StrCpy $UnboundConfPath ""
-  Return
+  ${IfNot} ${Errors}
+    DetailPrint "32-bit DNSSEC-Trigger InstallLocation found."
+  ${Else}
+    ReadRegStr $UnboundConfPath HKLM "Software\DnssecTrigger" "InstallLocation"
+    ${IfNot} ${Errors}
+      DetailPrint "Native-arch DNSSEC-Trigger InstallLocation found."
+    ${Else}
+      ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\Unbound" "InstallLocation"
+      ${IfNot} ${Errors}
+        DetailPrint "32-bit standalone Unbound InstallLocation found."
+      ${Else}
+        ReadRegStr $UnboundConfPath HKLM "Software\Unbound" "InstallLocation"
+        ${IfNot} ${Errors}
+          DetailPrint "Native-arch standalone Unbound InstallLocation found."
+        ${Else}
+          DetailPrint "*** Unbound InstallLocation was NOT found."
+          MessageBox "MB_OK|MB_ICONSTOP" "Unbound InstallLocation was NOT found." /SD IDOK
+          Abort
+        ${EndIf}
+      ${EndIf}
+    ${EndIf}
+  ${EndIf}
 
-  # dnssec-trigger/Unbound is installed. Adapt the Unbound config to include from a
-  # directory.
-found:
-  DetailPrint "*** dnssec-trigger installation WAS found, configuring Unbound."
-  IfFileExists "$UnboundConfPath\unbound.conf" found2
-  IfFileExists "$UnboundConfPath\service.conf" found2
-  Goto not_found
-found2:
+  ${IfNot} ${FileExists} "$UnboundConfPath\unbound.conf"
+  ${AndIfNot} ${FileExists} "$UnboundConfPath\service.conf"
+    DetailPrint "*** Unbound configuration file was NOT found."
+    # On Cirrus, we always fail to find the file.  Not sure why.  For now,
+    # ignore the error by returning instead of aborting.
+    #MessageBox "MB_OK|MB_ICONSTOP" "Unbound configuration file was NOT found." /SD IDOK
+    #Abort
+    Return
+  ${Else}
+    DetailPrint "Unbound configuration file found."
+  ${EndIf}
+
   CreateDirectory "$UnboundConfPath\unbound.conf.d"
 
   # Unbound on Windows doesn't appear to support globbing include directives,
