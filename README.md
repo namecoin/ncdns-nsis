@@ -1,7 +1,7 @@
 
 NSIS installer scripts for ncdns.
 
-Put the following files in `artifacts/`:
+Put the following files in `build64/artifacts/` or `build32/artifacts/`:
 
   - `ncdns.exe`
   - `certinject.exe`
@@ -14,6 +14,14 @@ Put the following files in `artifacts/`:
   - `ncdt.exe` and `ncdumpzone.exe` from ncdns
   - `generate_nmc_cert.exe`
   - `q.exe` from qlib
+  - `ncprop279.exe`
+  - `winsvcwrap.exe`
+  - `python` folder, containing an unzipped Python embeddable package
+
+Put the following files in `artifacts/`:
+
+  - `stem` Python package
+  - `stemns/stemns.py` from StemNS
 
 Build flags:
 
