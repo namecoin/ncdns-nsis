@@ -1,3 +1,10 @@
+Param (
+  [switch]$use_tor
+)
+
+$PSNativeCommandUseErrorActionPreference = $true
+$ErrorActionPreference = 'Stop'
+
 $InstDir = Get-ItemProperty -Path HKCU:\Software\Electrum-NMC | Select-Object -ExpandProperty '(Default)'
 
 $ElectrumExeSearch = Get-ChildItem "$InstDir" -Recurse -Force -Include electrum-nmc-*.exe
@@ -6,24 +13,24 @@ $ElectrumExeName = $ElectrumExeSearch[0].Name
 
 $ElectrumExe = "$InstDir\$ElectrumExeName"
 
-& "$ElectrumExe" setconfig rpcport 8336 | Out-Null
+& "$ElectrumExe" --offline setconfig rpcport 8336 | Out-Null
 Start-Sleep -Seconds 5
 
 # Generate random 32-byte hex password
 $RpcUser = -join ( 1..64 | ForEach-Object { (48..57) + (65..70) | Get-Random | % {[char]$_} } )
 $RpcPassword = -join ( 1..64 | ForEach-Object { (48..57) + (65..70) | Get-Random | % {[char]$_} } )
 
-& "$ElectrumExe" setconfig rpcuser "$RpcUser" | Out-Null
+& "$ElectrumExe" --offline setconfig rpcuser "$RpcUser" | Out-Null
 Start-Sleep -Seconds 5
 
-& "$ElectrumExe" setconfig rpcpassword "$RpcPassword" | Out-Null
+& "$ElectrumExe" --offline setconfig rpcpassword "$RpcPassword" | Out-Null
 Start-Sleep -Seconds 5
 
-echo '[ncdns]'
-echo ''
+if ($use_tor) {
+  & "$ElectrumExe" --offline setconfig proxy "socks5:127.0.0.1:9150:::1" | Out-Null
+  Start-Sleep -Seconds 5
+}
+
 echo 'namecoinrpcaddress="127.0.0.1:8336"'
 echo "namecoinrpcusername=`"$RpcUser`""
 echo "namecoinrpcpassword=`"$RpcPassword`""
-# Electrum-NMC can take a few seconds to run name_show; the default 1500 ms
-# timeout isn't long enough.
-echo 'namecoinrpctimeout="5000"'

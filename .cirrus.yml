@@ -20,7 +20,7 @@ task:
         cpu: 1
         memory: 1G
       install_script:
-        - dnf install -y git make mingw32-nsis unzip wget
+        - dnf install -y git jq make mingw32-nsis unzip wget
       env:
         DISTRO: Fedora
         NCDNS_LOGGING: "1"
@@ -30,7 +30,7 @@ task:
         memory: 1G
       install_script:
         - apt-get update
-        - apt-get install -y curl git make nsis unzip wget
+        - apt-get install -y curl git jq make nsis unzip wget
       env:
         DISTRO: Debian
   # TODO: fetch latest versions of everything
@@ -44,7 +44,8 @@ task:
     # ConsensusJ
     - curl -o bitcoinj-daemon.jar https://www.namecoin.org/files/ConsensusJ-Namecoin/0.3.2.1/namecoinj-daemon-0.3.2-SNAPSHOT.jar
     # Electrum-NMC
-    - curl -o electrum-nmc-setup.exe https://www.namecoin.org/files/electrum-nmc/electrum-nmc-3.3.10/electrum-nmc-nc3.3.10-setup.exe
+    - LATEST_ELECTRUM_NMC_VERSION=$(curl https://www.namecoin.org/download/electrum-nmc/version | jq --raw-output .version)
+    - curl -o electrum-nmc-setup.exe https://www.namecoin.org/files/electrum-nmc/electrum-nmc-$LATEST_ELECTRUM_NMC_VERSION/electrum-nmc-nc$LATEST_ELECTRUM_NMC_VERSION-setup.exe
     # BIND
     # As per https://www.isc.org/download/#BIND , "9.16.x is the last branch of
     # BIND with native Windows support."
@@ -77,7 +78,36 @@ task:
     - tar -xaf ncdns--windows_amd64.tar.gz
     - mv ncdns--windows_amd64/bin/*.exe ./
     - rm -rf ncdns--windows_amd64/
+    # ncprop279
+    - curl -o ncprop279--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/ncprop279/Cross-Compile%20Go%20latest%20Modules%20Off/binaries/dist/ncprop279--windows_amd64.tar.gz
+    - tar -xaf ncprop279--windows_amd64.tar.gz
+    - mv ncprop279--windows_amd64/bin/*.exe ./
+    - rm -rf ncprop279--windows_amd64/
+    # winsvcwrap
+    # TODO: This binary is from 2022 March 19; we should switch it to auto-update once it's in the Namecoin org
+    - curl -o winsvcwrap--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/task/4591993857769472/binaries/dist/winsvcwrap--windows_amd64.tar.gz
+    - tar -xaf winsvcwrap--windows_amd64.tar.gz
+    - mv winsvcwrap--windows_amd64/bin/*.exe ./
+    - rm -rf winsvcwrap--windows_amd64/
+    # Python
+    - LATEST_PYTHON_VERSION=$(curl https://www.python.org/downloads/windows/ | grep "Latest Python 3 Release" | grep --only-matching -E '[0-9]+\.[0-9\.]+')
+    - mkdir python
+    - cd python
+    - curl -o python-embed.zip https://www.python.org/ftp/python/$LATEST_PYTHON_VERSION/python-$LATEST_PYTHON_VERSION-embed-amd64.zip
+    - unzip python-embed.zip
+    - rm python-embed.zip
+    - cd ../
     - cd ../../
+    # Stem
+    - cd ./artifacts
+    - git clone -b 1.8.0 https://git.torproject.org/stem.git ./stem-git
+    - mv ./stem-git/stem ./stem
+    - rm -rf ./stem-git
+    # StemNS
+    - git clone https://github.com/namecoin/stemns.git ./stemns-git
+    - mv ./stemns-git/stemns.py ./stemns/
+    - rm -rf ./stemns-git
+    - cd ../
   build_script:
     # Tag detection from ncdns-repro
     - NCDNS_TAG=$(git ls-remote --tags "https://github.com/namecoin/ncdns.git" | grep -v '\^{}' | awk '{print $2}' | awk -F"/" '{print $3}' | sort -V | tail --lines=1)

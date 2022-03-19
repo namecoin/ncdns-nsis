@@ -1,0 +1,24 @@
+Var DarknetDialog
+
+Var DarknetDialog_TorStatus
+Var DarknetDialog_Tor
+
+Function DarknetDialog_CreateSkeleton
+
+  # Dialog
+  nsDialogs::Create 1018
+  Pop $DarknetDialog
+  ${If} $DarknetDialog == error
+    Abort
+  ${EndIf}
+  !insertmacro MUI_HEADER_TEXT "Darknet Resolution" "Resolve Namecoin domains in applications like Tor that don't use IP addresses."
+
+  # Tor Status Label
+  ${NSD_CreateLabel} 10u 0u -10u 15u "TOR_STATUS"
+  Pop $DarknetDialog_TorStatus
+
+  # Tor CheckBox
+  ${NSD_CreateCheckBox} 10u 22.5u -10u 15u "Tor Resolution (Namecoin node will use Tor)"
+  Pop $DarknetDialog_Tor
+
+FunctionEnd

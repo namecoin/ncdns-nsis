@@ -35,6 +35,7 @@ SetCompressor /SOLID lzma
 
 !include "namecoin-dialog.nsdinc"
 !include "dns-dialog.nsdinc"
+!include "darknet-dialog.nsdinc"
 !include "tls-positive-dialog.nsdinc"
 !include "tls-negative-dialog.nsdinc"
 
@@ -44,6 +45,7 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom NamecoinDialogCreate NamecoinDialogLeave
 Page custom DNSDialogCreate DNSDialogLeave
+Page custom DarknetDialogCreate DarknetDialogLeave
 Page custom TLSPositiveDialogCreate TLSPositiveDialogLeave
 Page custom TLSNegativeDialogCreate TLSNegativeDialogLeave
 !insertmacro MUI_PAGE_INSTFILES
@@ -102,10 +104,14 @@ Var /GLOBAL UseUnbound
 Var /GLOBAL UseNamecoinCore
 Var /GLOBAL UseConsensusJ
 Var /GLOBAL UseElectrumNMC
+Var /GLOBAL UseTorBrowser
+Var /GLOBAL UseTorSwitch
 
 Var /GLOBAL NamecoinCoreDetected
 Var /GLOBAL ElectrumNMCDetected
 Var /GLOBAL UnboundDetected
+Var /GLOBAL TorBrowserDetected
+Var /GLOBAL TorBrowserDetectReturnCode
 
 Var /GLOBAL CryptoAPIInjectionEnabled
 Var /GLOBAL CryptoAPIEncayaEnabled
@@ -139,6 +145,12 @@ Var /GLOBAL ServiceEncayaSidtypeReturnCode
 Var /GLOBAL ServiceEncayaDescriptionReturnCode
 Var /GLOBAL ServiceEncayaPrivsReturnCode
 Var /GLOBAL ServiceEncayaStartReturnCode
+Var /GLOBAL ServiceStemNSCreateReturnCode
+Var /GLOBAL ServiceStemNSSidtypeReturnCode
+Var /GLOBAL ServiceStemNSDescriptionReturnCode
+Var /GLOBAL ServiceStemNSPrivsReturnCode
+Var /GLOBAL ServiceStemNSFailureReturnCode
+Var /GLOBAL ServiceStemNSStartReturnCode
 Var /GLOBAL CoreCookieDirReturnCode
 Var /GLOBAL CoreCookieFileReturnCode
 Var /GLOBAL EtcReturnCode
@@ -160,8 +172,15 @@ Var /GLOBAL EtcEncayaRootKeyReturnCode
 Var /GLOBAL EtcEncayaListenChainReturnCode
 Var /GLOBAL EtcEncayaListenKeyReturnCode
 Var /GLOBAL EtcEncayaRootCertReturnCode
+Var /GLOBAL EtcNCProp279ReturnCode
+Var /GLOBAL EtcNCProp279ConfDReturnCode
+Var /GLOBAL EtcNCProp279ConfCoreReturnCode
+Var /GLOBAL EtcNCProp279ConfConsensusJReturnCode
+Var /GLOBAL EtcNCProp279ConfElectrumReturnCode
 Var /GLOBAL KeyDNSSECReturnCode
 Var /GLOBAL KeyEncayaReturnCode
+Var /GLOBAL TorRunningReturnCode
+Var /GLOBAL TorBrowserConfigReturnCode
 
 # PRELAUNCH CHECKS
 ##############################################################################
@@ -195,6 +214,7 @@ win7okay:
   Call DetectNamecoinCore
   Call DetectElectrumNMC
   Call DetectUnbound
+  Call DetectTorBrowser
   Call DetectJRE
   Call DetectVC2010_x86_32
   Call DetectVC2010_x86_64
@@ -364,6 +384,22 @@ Function DetectUnbound
 absent:
   Push 0
   Pop $UnboundDetected
+FunctionEnd
+
+Function DetectTorBrowser
+  File /oname=$PLUGINSDIR\detecttorbrowser.ps1 detecttorbrowser.ps1
+  File /oname=$PLUGINSDIR\detecttorbrowserchannel.ps1 detecttorbrowserchannel.ps1
+  SetOutPath "$PLUGINSDIR"
+  nsExec::ExecToStack 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorbrowser.ps1"'
+  Pop $TorBrowserDetectReturnCode
+  Pop $TorBrowserDetected
+  Delete $PLUGINSDIR\detecttorbrowserchannel.ps1
+  Delete $PLUGINSDIR\detecttorbrowser.ps1
+  SetOutPath "$INSTDIR"
+  ${If} $TorBrowserDetectReturnCode != 0
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to detect Tor Browser." /SD IDOK
+    Abort
+  ${EndIf}
 FunctionEnd
 
 Var /GLOBAL DetectJRE_W
@@ -597,6 +633,33 @@ Function DNSDialogLeave
   ${NSD_GetState} $DNSDialog_Unbound $UseUnbound
 FunctionEnd
 
+Function DarknetDialogCreate
+  Call DarknetDialog_CreateSkeleton
+
+  ${If} $TorBrowserDetected != ""
+    ${NSD_SetText} $DarknetDialog_TorStatus "An existing Tor Browser installation was detected."
+    # Restore state
+    ${NSD_SetState} $DarknetDialog_Tor $UseTorBrowser
+  ${Else}
+    ${NSD_SetText} $DarknetDialog_TorStatus "An existing Tor Browser installation was not detected."
+    ${NSD_SetState} $DarknetDialog_Tor ${BST_UNCHECKED}
+    EnableWindow $DarknetDialog_Tor 0
+  ${EndIf}
+
+  nsDialogs::Show
+FunctionEnd
+
+Function DarknetDialogLeave
+  ${NSD_GetState} $DarknetDialog_Tor $UseTorBrowser
+
+  Push ""
+  Pop $UseTorSwitch
+  ${If} $UseTorBrowser == ${BST_CHECKED}
+    Push "-use_tor"
+    Pop $UseTorSwitch
+  ${EndIf}
+FunctionEnd
+
 Function TLSPositiveDialogCreate
   Call TLSPositiveDialog_CreateSkeleton
 
@@ -645,6 +708,7 @@ Section "ncdns" Sec_ncdns
   Call BitcoinJ
   Call TrustConfig
   Call ServiceEncaya
+  Call ServiceStemNS
   Call FilesSecurePre
   Call KeyConfigDNSSEC
   Call ElectrumNMCConfig
@@ -658,6 +722,9 @@ Section "ncdns" Sec_ncdns
   Call ServiceEncayaEventLog
   Call ServiceEncayaStart
   Call UnboundConfig
+  Call TorBrowserConfig
+  Call ServiceStemNSEventLog
+  Call ServiceStemNSStart
 
   AddSize 12288  # Disk space estimation.
 SectionEnd
@@ -670,7 +737,9 @@ Section "Uninstall"
   Call un.TrustConfig
   Call un.ServiceNcdns
   Call un.ServiceEncaya
+  Call un.ServiceStemNS
   Call un.TrustEncayaConfig
+  Call un.TorBrowserConfig
   Call un.Files
   Call un.NamecoinCore
   Call un.ElectrumNMC
@@ -894,13 +963,8 @@ haveDataDir:
 
   # Execute confignamecoinconf.ps1.
   File /oname=$PLUGINSDIR\confignamecoinconf.ps1 confignamecoinconf.ps1
-  FileOpen $4 "$PLUGINSDIR\confignamecoinconf.cmd" w
-  FileWrite $4 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\confignamecoinconf.ps1" '
-  FileWrite $4 '"$NamecoinCoreDataDir" < nul'
-  FileClose $4
-  ${ExecToLog} '$PLUGINSDIR\confignamecoinconf.cmd'
+  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\confignamecoinconf.ps1" -data_dir "$NamecoinCoreDataDir" $UseTorSwitch'
   Delete $PLUGINSDIR\confignamecoinconf.ps1
-  Delete $PLUGINSDIR\confignamecoinconf.cmd
 
   # Restore SetShellVarContext
   SetShellVarContext all
@@ -1120,16 +1184,38 @@ Function ElectrumNMCConfig
 
   DetailPrint "Configuring Electrum-NMC..."
 
+  DetailPrint "Making sure Electrum-NMC is shut off..."
+
+  # We need the current user's $APPDATA for configuring Electrum-NMC.
+  SetShellVarContext current
+
+  ${While} ${FileExists} "$APPDATA\Electrum-NMC\daemon"
+    MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Please close Electrum-NMC and then click Retry, or click Cancel to abort installation." /SD IDCANCEL IDRETRY retry
+
+    Abort
+
+    retry:
+  ${EndWhile}
+
+  # Restore SetShellVarContext
+  SetShellVarContext all
+
+  DetailPrint "Electrum-NMC is shut off."
+
   DetailPrint "Setting Electrum-NMC static port..."
   File /oname=$PLUGINSDIR\configelectrum.ps1 configelectrum.ps1
-  nsExec::ExecToStack 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configelectrum.ps1"'
+  nsExec::ExecToStack 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configelectrum.ps1" $UseTorSwitch'
   Pop $ElectrumNMCConfigReturnCode
   Pop $ElectrumNMCConfigOutput
   Delete $PLUGINSDIR\configelectrum.ps1
 
   DetailPrint "Granting ncdns access to Electrum-NMC..."
   FileOpen $4 "$INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf" w
-  FileWrite $4 "$ElectrumNMCConfigOutput"
+  FileWrite $4 "[ncdns]$\r$\n$\r$\n"
+  FileWrite $4 "$ElectrumNMCConfigOutput$\r$\n"
+  # Electrum-NMC can take a few seconds to run name_show; the default 1500 ms
+  # timeout isn't long enough.
+  FileWrite $4 'namecoinrpctimeout="5000"$\r$\n'
   FileClose $4
 
   DetailPrint "Configured Electrum-NMC."
@@ -1345,6 +1431,65 @@ Function FilesSecureEncaya
   ${EndIf}
 FunctionEnd
 
+Function FilesSecureTorPre
+  ${If} $UseTorBrowser == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Tor filesystem permissions because Tor Browser support was rejected."
+    Return
+  ${EndIf}
+
+  ${ExecToLog} 'icacls "$INSTDIR\etc_ncprop279" /inheritance:r /T /grant "NT SERVICE\stemns:(OI)(CI)R" "${SID_SYSTEM}:(OI)(CI)F" "${SID_ADMINISTRATORS}:(OI)(CI)F"'
+  Pop $EtcNCProp279ReturnCode
+  ${If} $EtcNCProp279ReturnCode != 0
+    DetailPrint "Failed to set ACL on etc_ncprop279: return code $EtcNCProp279ReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on etc_ncprop279." /SD IDOK
+    Abort
+  ${EndIf}
+FunctionEnd
+
+Function FilesSecureTor
+  ${If} $UseTorBrowser == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping Tor filesystem permissions because Tor Browser support was rejected."
+    Return
+  ${EndIf}
+
+  # Ensure only StemNS service and administrators can read ncprop279.conf.
+  Call FilesSecureTorPre
+  ${ExecToLog} 'icacls "$INSTDIR\etc_ncprop279\ncprop279.conf.d" /reset'
+  Pop $EtcNCProp279ConfDReturnCode
+  ${If} $EtcNCProp279ConfDReturnCode != 0
+    DetailPrint "Failed to set ACL on ncprop279 config dir: return code $EtcNCProp279ConfDReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncprop279 config dir." /SD IDOK
+    Abort
+  ${EndIf}
+  ${If} $UseNamecoinCore == ${BST_CHECKED}
+    ${ExecToLog} 'icacls "$INSTDIR\etc_ncprop279\ncprop279.conf.d\namecoin-core.conf" /reset'
+    Pop $EtcNCProp279ConfCoreReturnCode
+    ${If} $EtcNCProp279ConfCoreReturnCode != 0
+      DetailPrint "Failed to set ACL on ncprop279 namecoin-core config: return code $EtcNCProp279ConfCoreReturnCode"
+      MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncprop279 namecoin-core config." /SD IDOK
+      Abort
+    ${EndIf}
+  ${EndIf}
+  ${If} $UseConsensusJ == ${BST_CHECKED}
+    ${ExecToLog} 'icacls "$INSTDIR\etc_ncprop279\ncprop279.conf.d\consensusj.conf" /reset'
+    Pop $EtcNCProp279ConfConsensusJReturnCode
+    ${If} $EtcNCProp279ConfConsensusJReturnCode != 0
+      DetailPrint "Failed to set ACL on ncprop279 consensusj config: return code $EtcNCProp279ConfConsensusJReturnCode"
+      MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncprop279 consensusj config." /SD IDOK
+      Abort
+    ${EndIf}
+  ${EndIf}
+  ${If} $UseElectrumNMC == ${BST_CHECKED}
+    ${ExecToLog} 'icacls "$INSTDIR\etc_ncprop279\ncprop279.conf.d\electrum-nmc.conf" /reset'
+    Pop $EtcNCProp279ConfElectrumReturnCode
+    ${If} $EtcNCProp279ConfElectrumReturnCode != 0
+      DetailPrint "Failed to set ACL on ncprop279 electrum-nmc config: return code $EtcNCProp279ConfElectrumReturnCode"
+      MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ncprop279 electrum-nmc config." /SD IDOK
+      Abort
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+
 Function un.Files
   Delete $INSTDIR\bin\ncdns.exe
   Delete $INSTDIR\bin\ncdt.exe
@@ -1557,6 +1702,90 @@ Function un.ServiceEncaya
   ${ExecToLog} 'sc delete encaya'
 FunctionEnd
 
+Function ServiceStemNS
+  ${If} $UseTorBrowser == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping StemNS service creation because Tor Browser support was rejected."
+    Return
+  ${EndIf}
+
+  ${ExecToLog} 'sc create stemns binPath= "stemns.tmp" start= auto error= normal obj= "NT AUTHORITY\LocalService" DisplayName= "StemNS"'
+  Pop $ServiceStemNSCreateReturnCode
+  ${If} $ServiceStemNSCreateReturnCode != 0
+    DetailPrint "Failed to create StemNS service: return code $ServiceStemNSCreateReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to create StemNS service." /SD IDOK
+    Abort
+  ${EndIf}
+  # Use service SID.
+  # Using a restricted sidtype causes StemNS service to crash on launch.  Maybe
+  # a Python issue?  Not motivated to track it down since StemNS will be phased
+  # out in the Arti transition.
+  ${ExecToLog} 'sc sidtype stemns unrestricted'
+  Pop $ServiceStemNSSidtypeReturnCode
+  ${If} $ServiceStemNSSidtypeReturnCode != 0
+    DetailPrint "Failed to restrict StemNS service: return code $ServiceStemNSSidtypeReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to restrict StemNS service." /SD IDOK
+    Abort
+  ${EndIf}
+  ${ExecToLog} 'sc description stemns "Namecoin Tor Prop279 Pluggable Naming"'
+  Pop $ServiceStemNSDescriptionReturnCode
+  ${If} $ServiceStemNSDescriptionReturnCode != 0
+    DetailPrint "Failed to set description on StemNS service: return code $ServiceStemNSDescriptionReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set description on StemNS service." /SD IDOK
+    Abort
+  ${EndIf}
+  # Restrict privileges. 'sc privs' interprets an empty list as meaning no
+  # privilege restriction... this one seems low-risk.
+  ${ExecToLog} 'sc privs stemns "SeChangeNotifyPrivilege"'
+  Pop $ServiceStemNSPrivsReturnCode
+  ${If} $ServiceStemNSPrivsReturnCode != 0
+    DetailPrint "Failed to set privileges on StemNS service: return code $ServiceStemNSPrivsReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set privileges on StemNS service." /SD IDOK
+    Abort
+  ${EndIf}
+  # Auto-restart service when it fails.
+  ${ExecToLog} 'sc failure stemns reset= 15 actions= "restart/1000/restart/1000/restart/15000"'
+  Pop $ServiceStemNSFailureReturnCode
+  ${If} $ServiceStemNSFailureReturnCode != 0
+    DetailPrint "Failed to loop StemNS service: return code $ServiceStemNSFailureReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to loop StemNS service." /SD IDOK
+    Abort
+  ${EndIf}
+  # Set the proper image path manually rather than try to escape it properly
+  # above.
+  WriteRegStr HKLM "System\CurrentControlSet\Services\stemns" "ImagePath" '"$INSTDIR\bin\winsvcwrap.exe" "-conf=$INSTDIR\etc_winsvcwrap_stemns\winsvcwrap.conf"'
+FunctionEnd
+
+Function ServiceStemNSEventLog
+  ${If} $UseTorBrowser == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping StemNS event log registration because Tor Browser support was rejected."
+    Return
+  ${EndIf}
+
+  WriteRegStr HKLM "System\CurrentControlSet\Services\EventLog\Application\stemns" "EventMessageFile" "%SystemRoot%\System32\EventCreate.exe"
+  # 7 == Error | Warning | Info
+  WriteRegDWORD HKLM "System\CurrentControlSet\Services\EventLog\Application\stemns" "TypesSupported" 7
+FunctionEnd
+
+Function ServiceStemNSStart
+  ${If} $UseTorBrowser == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping StemNS service start because Tor Browser support was rejected."
+    Return
+  ${EndIf}
+
+  ${ExecToLog} 'net start stemns'
+  Pop $ServiceStemNSStartReturnCode
+  ${If} $ServiceStemNSStartReturnCode != 0
+    DetailPrint "Failed to start StemNS service: return code $ServiceStemNSStartReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to start StemNS service." /SD IDOK
+    Abort
+  ${EndIf}
+FunctionEnd
+
+Function un.ServiceStemNS
+  ${ExecToLog} 'net stop stemns'
+  ${ExecToLog} 'sc delete stemns'
+FunctionEnd
+
 
 # UNBOUND CONFIGURATION
 ##############################################################################
@@ -1569,26 +1798,41 @@ Function UnboundConfig
   # Detect dnssec-trigger/Unbound installation.
   ClearErrors
   ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\DnssecTrigger" "InstallLocation"
-  IfErrors 0 found
-  ReadRegStr $UnboundConfPath HKLM "Software\DnssecTrigger" "InstallLocation"
-  IfErrors 0 found
-  ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\Unbound" "InstallLocation"
-  IfErrors 0 found
-  ReadRegStr $UnboundConfPath HKLM "Software\Unbound" "InstallLocation"
-  IfErrors 0 found
-not_found:
-  DetailPrint "*** dnssec-trigger installation was NOT found, not configuring Unbound."
-  StrCpy $UnboundConfPath ""
-  Return
+  ${IfNot} ${Errors}
+    DetailPrint "32-bit DNSSEC-Trigger InstallLocation found."
+  ${Else}
+    ReadRegStr $UnboundConfPath HKLM "Software\DnssecTrigger" "InstallLocation"
+    ${IfNot} ${Errors}
+      DetailPrint "Native-arch DNSSEC-Trigger InstallLocation found."
+    ${Else}
+      ReadRegStr $UnboundConfPath HKLM "Software\Wow6432Node\Unbound" "InstallLocation"
+      ${IfNot} ${Errors}
+        DetailPrint "32-bit standalone Unbound InstallLocation found."
+      ${Else}
+        ReadRegStr $UnboundConfPath HKLM "Software\Unbound" "InstallLocation"
+        ${IfNot} ${Errors}
+          DetailPrint "Native-arch standalone Unbound InstallLocation found."
+        ${Else}
+          DetailPrint "*** Unbound InstallLocation was NOT found."
+          MessageBox "MB_OK|MB_ICONSTOP" "Unbound InstallLocation was NOT found." /SD IDOK
+          Abort
+        ${EndIf}
+      ${EndIf}
+    ${EndIf}
+  ${EndIf}
 
-  # dnssec-trigger/Unbound is installed. Adapt the Unbound config to include from a
-  # directory.
-found:
-  DetailPrint "*** dnssec-trigger installation WAS found, configuring Unbound."
-  IfFileExists "$UnboundConfPath\unbound.conf" found2
-  IfFileExists "$UnboundConfPath\service.conf" found2
-  Goto not_found
-found2:
+  ${IfNot} ${FileExists} "$UnboundConfPath\unbound.conf"
+  ${AndIfNot} ${FileExists} "$UnboundConfPath\service.conf"
+    DetailPrint "*** Unbound configuration file was NOT found."
+    # On Cirrus, we always fail to find the file.  Not sure why.  For now,
+    # ignore the error by returning instead of aborting.
+    #MessageBox "MB_OK|MB_ICONSTOP" "Unbound configuration file was NOT found." /SD IDOK
+    #Abort
+    Return
+  ${Else}
+    DetailPrint "Unbound configuration file found."
+  ${EndIf}
+
   CreateDirectory "$UnboundConfPath\unbound.conf.d"
 
   # Unbound on Windows doesn't appear to support globbing include directives,
@@ -1643,6 +1887,172 @@ Function un.UnboundConfig
 not_found:
 FunctionEnd
 
+
+# TOR BROWSER CONFIGURATION
+##############################################################################
+Function TorBrowserConfig
+  ${If} $UseTorBrowser == ${BST_UNCHECKED}
+    DetailPrint "Not configuring Tor Browser."
+    Return
+  ${EndIf}
+
+  DetailPrint "Making sure Tor is shut off..."
+
+  File /oname=$PLUGINSDIR\detecttorrunning.ps1 detecttorrunning.ps1
+
+  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
+  Pop $TorRunningReturnCode
+
+  ${While} $TorRunningReturnCode == 1
+    MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Please close Tor and then click Retry, or click Cancel to abort installation." /SD IDCANCEL IDRETRY retry
+
+    Delete $PLUGINSDIR\detecttorrunning.ps1
+
+    Abort
+
+    retry:
+
+    ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
+    Pop $TorRunningReturnCode
+  ${EndWhile}
+
+  Delete $PLUGINSDIR\detecttorrunning.ps1
+
+  DetailPrint "Tor is shut off."
+
+  DetailPrint "*** Installing ncprop279 files..."
+  File /oname=$INSTDIR\bin\ncprop279.exe ${ARTIFACTS}\ncprop279.exe
+  CreateDirectory $INSTDIR\etc_ncprop279
+  CreateDirectory $INSTDIR\etc_ncprop279\ncprop279.conf.d
+
+  Call FilesSecureTorPre
+
+  ${If} $UseNamecoinCore == ${BST_CHECKED}
+    File /oname=$INSTDIR\etc_ncprop279\ncprop279.conf.d\namecoin-core.conf ${NEUTRAL_ARTIFACTS}\ncprop279.conf.d\namecoin-core.conf
+  ${ElseIf} $UseConsensusJ == ${BST_CHECKED}
+    File /oname=$INSTDIR\etc_ncprop279\ncprop279.conf.d\consensusj.conf ${NEUTRAL_ARTIFACTS}\ncprop279.conf.d\consensusj.conf
+  ${ElseIf} $UseElectrumNMC == ${BST_CHECKED}
+    DetailPrint "Granting ncprop279 access to Electrum-NMC..."
+    FileOpen $4 "$INSTDIR\etc_ncprop279\ncprop279.conf.d\electrum-nmc.conf" w
+    FileWrite $4 "[ncprop279]$\r$\n$\r$\n"
+    FileWrite $4 "$ElectrumNMCConfigOutput$\r$\n"
+    # Electrum-NMC can take a few seconds to run name_show, especially over
+    # Tor; the default 1500 ms timeout isn't long enough.
+    FileWrite $4 'namecoinrpctimeout="10000"$\r$\n'
+    FileClose $4
+  ${EndIf}
+
+  Call FilesSecureTor
+
+  DetailPrint "*** Installing Python files..."
+  CreateDirectory $INSTDIR\bin\python
+  SetOutPath $INSTDIR\bin\python
+  File /r ${ARTIFACTS}\python\*.*
+  SetOutPath $INSTDIR
+
+  DetailPrint "*** Installing Stem files..."
+  CreateDirectory $INSTDIR\bin\python\stem
+  SetOutPath $INSTDIR\bin\python\stem
+  File /r ${NEUTRAL_ARTIFACTS}\stem\*.*
+  SetOutPath $INSTDIR
+
+  DetailPrint "*** Installing StemNS files..."
+  File /oname=$INSTDIR\bin\stemns.py ${NEUTRAL_ARTIFACTS}\stemns\stemns.py
+  File /oname=$INSTDIR\bin\python\settings_services.py ${NEUTRAL_ARTIFACTS}\stemns\settings_services.py
+  File /oname=$INSTDIR\bin\python\settings_port.py ${NEUTRAL_ARTIFACTS}\stemns\settings_port.py
+
+  DetailPrint "*** Installing winsvcwrap files..."
+  File /oname=$INSTDIR\bin\winsvcwrap.exe ${ARTIFACTS}\winsvcwrap.exe
+  CreateDirectory $INSTDIR\etc_winsvcwrap_stemns
+  CreateDirectory $INSTDIR\etc_winsvcwrap_stemns\winsvcwrap.conf.d
+  File /oname=$INSTDIR\etc_winsvcwrap_stemns\winsvcwrap.conf.d\xlog.conf ${NEUTRAL_ARTIFACTS}\winsvcwrap.conf.d\xlog.conf
+
+  DetailPrint "*** Configuring winsvcwrap..."
+  FileOpen $4 "$INSTDIR\etc_winsvcwrap_stemns\winsvcwrap.conf.d\stemns.conf" w
+  FileWrite $4 "[winsvcwrap]$\r$\n$\r$\n"
+  FileWrite $4 "run='$INSTDIR\bin\python\python.exe'$\r$\n"
+  FileWrite $4 "arg='$INSTDIR\bin\stemns.py'$\r$\n"
+  FileWrite $4 "cwd='$INSTDIR\bin'$\r$\n"
+  FileClose $4
+
+  DetailPrint "*** Configuring Tor..."
+  File /oname=$PLUGINSDIR\configtorbrowser.ps1 configtorbrowser.ps1
+  File /oname=$PLUGINSDIR\detecttorbrowser.ps1 detecttorbrowser.ps1
+  File /oname=$PLUGINSDIR\detecttorbrowserchannel.ps1 detecttorbrowserchannel.ps1
+  SetOutPath "$PLUGINSDIR"
+  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configtorbrowser.ps1"'
+  Pop $TorBrowserConfigReturnCode
+  Delete $PLUGINSDIR\detecttorbrowserchannel.ps1
+  Delete $PLUGINSDIR\detecttorbrowser.ps1
+  Delete $PLUGINSDIR\configtorbrowser.ps1
+  SetOutPath "$INSTDIR"
+  ${If} $TorBrowserConfigReturnCode != 0
+    DetailPrint "Failed to configure Tor: return code $TorBrowserConfigReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to configure Tor." /SD IDOK
+    Abort
+  ${EndIf}
+FunctionEnd
+
+Function un.TorBrowserConfig
+  DetailPrint "Making sure Tor is shut off..."
+
+  File /oname=$PLUGINSDIR\detecttorrunning.ps1 detecttorrunning.ps1
+
+  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
+  Pop $TorRunningReturnCode
+
+  ${While} $TorRunningReturnCode == 1
+    MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Please close Tor and then click Retry, or click Cancel to uninstall anyway (might break Tor)." /SD IDCANCEL IDRETRY retry
+
+    ${Break}
+
+    retry:
+
+    ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
+    Pop $TorRunningReturnCode
+  ${EndWhile}
+
+  Delete $PLUGINSDIR\detecttorrunning.ps1
+
+  DetailPrint "Tor is shut off."
+
+  # Binaries
+  Delete $INSTDIR\bin\ncprop279.exe
+  Delete $INSTDIR\bin\winsvcwrap.exe
+
+  # ncprop279 config
+  Delete $INSTDIR\etc_ncprop279\ncprop279.conf.d\namecoin-core.conf
+  Delete $INSTDIR\etc_ncprop279\ncprop279.conf.d\consensusj.conf
+  Delete $INSTDIR\etc_ncprop279\ncprop279.conf.d\electrum-nmc.conf
+  RMDir $INSTDIR\etc_ncprop279\ncprop279.conf.d
+  RMDir $INSTDIR\etc_ncprop279
+
+  # winsvcwrap config
+  Delete $INSTDIR\etc_winsvcwrap_stemns\winsvcwrap.conf.d\stemns.conf
+  Delete $INSTDIR\etc_winsvcwrap_stemns\winsvcwrap.conf.d\xlog.conf
+  RMDir $INSTDIR\etc_winsvcwrap_stemns\winsvcwrap.conf.d
+  RMDir $INSTDIR\etc_winsvcwrap_stemns
+
+  # Python and packages
+  RMDir /r $INSTDIR\bin\python
+
+  # StemNS
+  Delete $INSTDIR\bin\stemns.py
+
+  File /oname=$PLUGINSDIR\unconfigtorbrowser.ps1 unconfigtorbrowser.ps1
+  File /oname=$PLUGINSDIR\detecttorbrowser.ps1 detecttorbrowser.ps1
+  File /oname=$PLUGINSDIR\detecttorbrowserchannel.ps1 detecttorbrowserchannel.ps1
+  SetOutPath "$PLUGINSDIR"
+  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\unconfigtorbrowser.ps1"'
+  Pop $TorBrowserConfigReturnCode
+  Delete $PLUGINSDIR\detecttorbrowserchannel.ps1
+  Delete $PLUGINSDIR\detecttorbrowser.ps1
+  Delete $PLUGINSDIR\configtorbrowser.ps1
+  SetOutPath "$INSTDIR"
+  ${If} $TorBrowserConfigReturnCode != 0
+    DetailPrint "Failed to unconfigure Tor: return code $TorBrowserConfigReturnCode"
+  ${EndIf}
+FunctionEnd
 
 # REGISTRY PERMISSION CONFIGURATION FOR NCDNS TRUST INJECTION
 ##############################################################################
