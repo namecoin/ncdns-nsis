@@ -240,7 +240,9 @@ win7okay:
   Pop $UseUnbound
 
   # Default components: TLS
-  Push ${BST_CHECKED}
+  # CertInject temporarily disabled
+  #Push ${BST_CHECKED}
+  Push ${BST_UNCHECKED}
   Pop $CryptoAPIInjectionEnabled
   Push ${BST_CHECKED}
   Pop $CryptoAPIEncayaEnabled
@@ -664,14 +666,16 @@ Function TLSPositiveDialogCreate
   Call TLSPositiveDialog_CreateSkeleton
 
   # Restore state
-  ${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
+  # CertInject temporarily disabled
+  #${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
   ${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer2 $CryptoAPIEncayaEnabled
 
   nsDialogs::Show
 FunctionEnd
 
 Function TLSPositiveDialogLeave
-  ${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
+  # CertInject temporarily disabled
+  #${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
   ${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer2 $CryptoAPIEncayaEnabled
 FunctionEnd
 
