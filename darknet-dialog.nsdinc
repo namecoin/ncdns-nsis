@@ -18,7 +18,7 @@ Function DarknetDialog_CreateSkeleton
   Pop $DarknetDialog_TorStatus
 
   # Tor CheckBox
-  ${NSD_CreateCheckBox} 10u 22.5u -10u 15u "Tor Resolution (Namecoin node will use Tor)"
+  ${NSD_CreateCheckBox} 10u 22.5u -10u 45u "Tor Resolution: Tor Browser (and any other applications that use its Tor instance) will resolve Namecoin domains.  Namecoin Core or Electrum-NMC will access the Internet through Tor."
   Pop $DarknetDialog_Tor
 
 FunctionEnd
