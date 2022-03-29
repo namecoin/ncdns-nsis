@@ -1,3 +1,5 @@
-& .\detecttorbrowserchannel.ps1 -Channel ""
-& .\detecttorbrowserchannel.ps1 -Channel " Alpha"
-& .\detecttorbrowserchannel.ps1 -Channel " Nightly"
+$sp = split-path -parent $MyInvocation.MyCommand.Definition
+
+& "$sp\detecttorbrowserchannel.ps1" -Channel ""
+& "$sp\detecttorbrowserchannel.ps1" -Channel " Alpha"
+& "$sp\detecttorbrowserchannel.ps1" -Channel " Nightly"
