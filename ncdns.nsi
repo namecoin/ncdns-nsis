@@ -399,7 +399,7 @@ Function DetectTorBrowser
   Delete $PLUGINSDIR\detecttorbrowser.ps1
   SetOutPath "$INSTDIR"
   ${If} $TorBrowserDetectReturnCode != 0
-    MessageBox "MB_OK|MB_ICONSTOP" "Failed to detect Tor Browser." /SD IDOK
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to detect Tor Browser: return code $TorBrowserDetectReturnCode:$\n$\n$TorBrowserDetected" /SD IDOK
     Abort
   ${EndIf}
 FunctionEnd
@@ -867,6 +867,7 @@ install_silent:
 detect:
   Call DetectUnbound
   ${If} $UnboundDetected == 0
+    DetailPrint "DNSSEC Trigger was not installed correctly."
     MessageBox "MB_OKCANCEL|MB_ICONSTOP" "DNSSEC Trigger was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
     Abort
   ${EndIf}
@@ -1005,6 +1006,7 @@ install_silent:
 detect:
   Call DetectNamecoinCore
   ${If} $NamecoinCoreDetected == 0
+    DetailPrint "Namecoin Core was not installed correctly."
     MessageBox "MB_OKCANCEL|MB_ICONSTOP" "Namecoin Core was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
     Abort
   ${EndIf}
@@ -1079,6 +1081,7 @@ install_silent:
 detect:
   Call DetectElectrumNMC
   ${If} $ElectrumNMCDetected == 0
+    DetailPrint "Electrum-NMC was not installed correctly."
     MessageBox "MB_OKCANCEL|MB_ICONSTOP" "Electrum-NMC was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
     Abort
   ${EndIf}
@@ -1194,6 +1197,7 @@ Function ElectrumNMCConfig
   SetShellVarContext current
 
   ${While} ${FileExists} "$APPDATA\Electrum-NMC\daemon"
+    DetailPrint "Electrum-NMC is running; waiting for shutoff."
     MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Please close Electrum-NMC and then click Retry, or click Cancel to abort installation." /SD IDCANCEL IDRETRY retry
 
     Abort
@@ -1212,6 +1216,12 @@ Function ElectrumNMCConfig
   Pop $ElectrumNMCConfigReturnCode
   Pop $ElectrumNMCConfigOutput
   Delete $PLUGINSDIR\configelectrum.ps1
+
+  ${If} $ElectrumNMCConfigReturnCode != 0
+    DetailPrint "Failed to set Electrum-NMC static port: return code $ElectrumNMCConfigReturnCode: $ElectrumNMCConfigOutput"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set Electrum-NMC static port." /SD IDOK
+    Abort
+  ${EndIf}
 
   DetailPrint "Granting ncdns access to Electrum-NMC..."
   FileOpen $4 "$INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf" w
@@ -1908,6 +1918,7 @@ Function TorBrowserConfig
   Pop $TorRunningReturnCode
 
   ${While} $TorRunningReturnCode == 1
+    DetailPrint "Tor is running; waiting for shutoff."
     MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Please close Tor and then click Retry, or click Cancel to abort installation." /SD IDCANCEL IDRETRY retry
 
     Delete $PLUGINSDIR\detecttorrunning.ps1
