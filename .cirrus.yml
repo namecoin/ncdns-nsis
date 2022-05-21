@@ -79,7 +79,7 @@ task:
     - mv ncdns--windows_amd64/bin/*.exe ./
     - rm -rf ncdns--windows_amd64/
     # ncprop279
-    - curl -o ncprop279--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/ncprop279/Cross-Compile%20Go%20latest%20Modules%20Off/binaries/dist/ncprop279--windows_amd64.tar.gz
+    - curl -o ncprop279--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/ncprop279/Cross-Compile%20Go%20latest/binaries/dist/ncprop279--windows_amd64.tar.gz
     - tar -xaf ncprop279--windows_amd64.tar.gz
     - mv ncprop279--windows_amd64/bin/*.exe ./
     - rm -rf ncprop279--windows_amd64/
