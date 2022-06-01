@@ -392,14 +392,17 @@ Function DetectTorBrowser
   File /oname=$PLUGINSDIR\detecttorbrowser.ps1 detecttorbrowser.ps1
   File /oname=$PLUGINSDIR\detecttorbrowserchannel.ps1 detecttorbrowserchannel.ps1
   SetOutPath "$PLUGINSDIR"
-  nsExec::ExecToStack 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorbrowser.ps1"'
+  # "-inputformat none" works around a PowerShell v2 (Windows 7) bug that
+  # manifests as exit code 1 with stderr "Access to this path is denied".  See
+  # http://forums.winamp.com/showthread.php?p=2969465
+  nsExec::ExecToStack 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\detecttorbrowser.ps1"'
   Pop $TorBrowserDetectReturnCode
   Pop $TorBrowserDetected
   Delete $PLUGINSDIR\detecttorbrowserchannel.ps1
   Delete $PLUGINSDIR\detecttorbrowser.ps1
   SetOutPath "$INSTDIR"
   ${If} $TorBrowserDetectReturnCode != 0
-    MessageBox "MB_OK|MB_ICONSTOP" "Failed to detect Tor Browser." /SD IDOK
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to detect Tor Browser: return code $TorBrowserDetectReturnCode:$\n$\n$TorBrowserDetected" /SD IDOK
     Abort
   ${EndIf}
 FunctionEnd
@@ -867,6 +870,7 @@ install_silent:
 detect:
   Call DetectUnbound
   ${If} $UnboundDetected == 0
+    DetailPrint "DNSSEC Trigger was not installed correctly."
     MessageBox "MB_OKCANCEL|MB_ICONSTOP" "DNSSEC Trigger was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
     Abort
   ${EndIf}
@@ -967,7 +971,7 @@ haveDataDir:
 
   # Execute confignamecoinconf.ps1.
   File /oname=$PLUGINSDIR\confignamecoinconf.ps1 confignamecoinconf.ps1
-  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\confignamecoinconf.ps1" -data_dir "$NamecoinCoreDataDir" $UseTorSwitch'
+  ${ExecToLog} 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\confignamecoinconf.ps1" -data_dir "$NamecoinCoreDataDir" $UseTorSwitch'
   Delete $PLUGINSDIR\confignamecoinconf.ps1
 
   # Restore SetShellVarContext
@@ -1005,6 +1009,7 @@ install_silent:
 detect:
   Call DetectNamecoinCore
   ${If} $NamecoinCoreDetected == 0
+    DetailPrint "Namecoin Core was not installed correctly."
     MessageBox "MB_OKCANCEL|MB_ICONSTOP" "Namecoin Core was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
     Abort
   ${EndIf}
@@ -1079,6 +1084,7 @@ install_silent:
 detect:
   Call DetectElectrumNMC
   ${If} $ElectrumNMCDetected == 0
+    DetailPrint "Electrum-NMC was not installed correctly."
     MessageBox "MB_OKCANCEL|MB_ICONSTOP" "Electrum-NMC was not installed correctly. Press OK to retry or Cancel to abort the installer." /SD IDCANCEL IDOK again
     Abort
   ${EndIf}
@@ -1194,6 +1200,7 @@ Function ElectrumNMCConfig
   SetShellVarContext current
 
   ${While} ${FileExists} "$APPDATA\Electrum-NMC\daemon"
+    DetailPrint "Electrum-NMC is running; waiting for shutoff."
     MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Please close Electrum-NMC and then click Retry, or click Cancel to abort installation." /SD IDCANCEL IDRETRY retry
 
     Abort
@@ -1208,10 +1215,16 @@ Function ElectrumNMCConfig
 
   DetailPrint "Setting Electrum-NMC static port..."
   File /oname=$PLUGINSDIR\configelectrum.ps1 configelectrum.ps1
-  nsExec::ExecToStack 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configelectrum.ps1" $UseTorSwitch'
+  nsExec::ExecToStack 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\configelectrum.ps1" $UseTorSwitch'
   Pop $ElectrumNMCConfigReturnCode
   Pop $ElectrumNMCConfigOutput
   Delete $PLUGINSDIR\configelectrum.ps1
+
+  ${If} $ElectrumNMCConfigReturnCode != 0
+    DetailPrint "Failed to set Electrum-NMC static port: return code $ElectrumNMCConfigReturnCode: $ElectrumNMCConfigOutput"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set Electrum-NMC static port." /SD IDOK
+    Abort
+  ${EndIf}
 
   DetailPrint "Granting ncdns access to Electrum-NMC..."
   FileOpen $4 "$INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf" w
@@ -1904,10 +1917,11 @@ Function TorBrowserConfig
 
   File /oname=$PLUGINSDIR\detecttorrunning.ps1 detecttorrunning.ps1
 
-  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
+  ${ExecToLog} 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
   Pop $TorRunningReturnCode
 
   ${While} $TorRunningReturnCode == 1
+    DetailPrint "Tor is running; waiting for shutoff."
     MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "Please close Tor and then click Retry, or click Cancel to abort installation." /SD IDCANCEL IDRETRY retry
 
     Delete $PLUGINSDIR\detecttorrunning.ps1
@@ -1916,7 +1930,7 @@ Function TorBrowserConfig
 
     retry:
 
-    ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
+    ${ExecToLog} 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
     Pop $TorRunningReturnCode
   ${EndWhile}
 
@@ -1984,7 +1998,7 @@ Function TorBrowserConfig
   File /oname=$PLUGINSDIR\detecttorbrowser.ps1 detecttorbrowser.ps1
   File /oname=$PLUGINSDIR\detecttorbrowserchannel.ps1 detecttorbrowserchannel.ps1
   SetOutPath "$PLUGINSDIR"
-  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\configtorbrowser.ps1"'
+  ${ExecToLog} 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\configtorbrowser.ps1"'
   Pop $TorBrowserConfigReturnCode
   Delete $PLUGINSDIR\detecttorbrowserchannel.ps1
   Delete $PLUGINSDIR\detecttorbrowser.ps1
@@ -2002,7 +2016,7 @@ Function un.TorBrowserConfig
 
   File /oname=$PLUGINSDIR\detecttorrunning.ps1 detecttorrunning.ps1
 
-  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
+  ${ExecToLog} 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
   Pop $TorRunningReturnCode
 
   ${While} $TorRunningReturnCode == 1
@@ -2012,7 +2026,7 @@ Function un.TorBrowserConfig
 
     retry:
 
-    ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
+    ${ExecToLog} 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\detecttorrunning.ps1"'
     Pop $TorRunningReturnCode
   ${EndWhile}
 
@@ -2047,7 +2061,7 @@ Function un.TorBrowserConfig
   File /oname=$PLUGINSDIR\detecttorbrowser.ps1 detecttorbrowser.ps1
   File /oname=$PLUGINSDIR\detecttorbrowserchannel.ps1 detecttorbrowserchannel.ps1
   SetOutPath "$PLUGINSDIR"
-  ${ExecToLog} 'powershell -executionpolicy bypass -noninteractive -file "$PLUGINSDIR\unconfigtorbrowser.ps1"'
+  ${ExecToLog} 'powershell -executionpolicy bypass -inputformat none -noninteractive -file "$PLUGINSDIR\unconfigtorbrowser.ps1"'
   Pop $TorBrowserConfigReturnCode
   Delete $PLUGINSDIR\detecttorbrowserchannel.ps1
   Delete $PLUGINSDIR\detecttorbrowser.ps1

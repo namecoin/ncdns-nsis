@@ -1,4 +1,6 @@
-$Dirs = & .\detecttorbrowser.ps1
+$sp = split-path -parent $MyInvocation.MyCommand.Definition
+
+$Dirs = & "$sp\detecttorbrowser.ps1"
 $StemNSOpt = "__LeaveStreamsUnattached 1"
 
 foreach ($TorBrowserDir in $Dirs) {
