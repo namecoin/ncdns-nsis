@@ -248,8 +248,6 @@ win7okay:
   Pop $CryptoAPIEncayaEnabled
   Push ${BST_CHECKED}
   Pop $CryptoAPINameConstraintsEnabled
-
-  Call FailIfBindRequirementsNotMet
 FunctionEnd
 
 Function un.onInit
@@ -1251,15 +1249,8 @@ Function Files
   CreateDirectory $INSTDIR\etc\ncdns.conf.d
   File /oname=$INSTDIR\etc\ncdns.conf.d\xlog.conf ${NEUTRAL_ARTIFACTS}\ncdns.conf.d\xlog.conf
 
-  # BIND files
-  File /oname=$INSTDIR\bin\dnssec-keygen.exe ${ARTIFACTS}\dnssec-keygen.exe
-  File /oname=$INSTDIR\bin\libcrypto-1_1-x64.dll ${ARTIFACTS}\libcrypto-1_1-x64.dll
-  File /oname=$INSTDIR\bin\libdns.dll ${ARTIFACTS}\libdns.dll
-  File /oname=$INSTDIR\bin\libisc.dll ${ARTIFACTS}\libisc.dll
-  File /oname=$INSTDIR\bin\libisccfg.dll ${ARTIFACTS}\libisccfg.dll
-  File /oname=$INSTDIR\bin\libssl-1_1-x64.dll ${ARTIFACTS}\libssl-1_1-x64.dll
-  File /oname=$INSTDIR\bin\libxml2.dll ${ARTIFACTS}\libxml2.dll
-  File /oname=$INSTDIR\bin\uv.dll ${ARTIFACTS}\uv.dll
+  # coredns-utils files
+  File /oname=$INSTDIR\bin\coredns-keygen.exe ${ARTIFACTS}\coredns-keygen.exe
 
 #!if /FileExists "${ARTIFACTS}\ncdt.exe"
 # This is listed in NSIS.chm but doesn't appear to be supported on the POSIX
@@ -1514,15 +1505,8 @@ Function un.Files
   Delete $INSTDIR\bin\generate_nmc_cert.exe
   Delete $INSTDIR\bin\q.exe
 
-  # BIND files
-  Delete $INSTDIR\bin\dnssec-keygen.exe
-  Delete $INSTDIR\bin\libcrypto-1_1-x64.dll
-  Delete $INSTDIR\bin\libdns.dll
-  Delete $INSTDIR\bin\libisc.dll
-  Delete $INSTDIR\bin\libisccfg.dll
-  Delete $INSTDIR\bin\libssl-1_1-x64.dll
-  Delete $INSTDIR\bin\libxml2.dll
-  Delete $INSTDIR\bin\uv.dll
+  # coredns-utils files
+  Delete $INSTDIR\bin\coredns-keygen.exe
 
   Delete $INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf
   Delete $INSTDIR\etc\ncdns.conf.d\xlog.conf
