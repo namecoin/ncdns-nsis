@@ -46,18 +46,16 @@ task:
     # Electrum-NMC
     - LATEST_ELECTRUM_NMC_VERSION=$(curl https://www.namecoin.org/download/electrum-nmc/version | jq --raw-output .version)
     - curl -o electrum-nmc-setup.exe https://www.namecoin.org/files/electrum-nmc/electrum-nmc-$LATEST_ELECTRUM_NMC_VERSION/electrum-nmc-nc$LATEST_ELECTRUM_NMC_VERSION-setup.exe
-    # BIND
-    # As per https://www.isc.org/download/#BIND , "9.16.x is the last branch of
-    # BIND with native Windows support."
-    - LATEST_BIND_VERSION=$(curl https://ftp.isc.org/isc/bind/ | grep --only-matching '"[0-9]*\.[0-9]*\.[0-9]*/"' | grep '9\.16' | tail --lines=1 | grep --only-matching '[0-9]*\.[0-9]*\.[0-9]*')
-    - curl -o bind.zip https://ftp.isc.org/isc/bind/$LATEST_BIND_VERSION/BIND$LATEST_BIND_VERSION.x64.zip
-    - unzip bind.zip
-    - rm bind.zip
     # certinject
     - curl -o certinject--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/certinject/Cross-Compile%20Go%20latest/binaries/dist/certinject--windows_amd64.tar.gz
     - tar -xaf certinject--windows_amd64.tar.gz
     - mv certinject--windows_amd64/bin/certinject.exe ./
     - rm -rf certinject--windows_amd64/
+    # coredns-utils
+    - curl -o coredns-utils-zsk--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/coredns-utils-zsk/Cross-Compile%20Go%20latest%20Modules%20Off/binaries/dist/coredns-utils-zsk--windows_amd64.tar.gz
+    - tar -xaf coredns-utils-zsk--windows_amd64.tar.gz
+    - mv coredns-utils-zsk--windows_amd64/bin/coredns-keygen.exe ./
+    - rm -rf coredns-utils-zsk--windows_amd64/
     # Encaya
     - curl -o encaya--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/encaya/Cross-Compile%20Go%20latest/binaries/dist/encaya--windows_amd64.tar.gz
     - tar -xaf encaya--windows_amd64.tar.gz
