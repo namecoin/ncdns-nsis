@@ -1,4 +1,6 @@
-$should_succeed = $Env:INSTALL_VCPP -eq "1"
+# VCPP is no longer needed since BIND dependency was removed.
+#$should_succeed = $Env:INSTALL_VCPP -eq "1"
+$should_succeed = $True
 
 try {
   # Pipe to Out-Null so that PowerShell waits for the program to exit.
