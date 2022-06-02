@@ -161,9 +161,11 @@ Var /GLOBAL EtcConfXlogReturnCode
 Var /GLOBAL EtcZskReturnCode
 Var /GLOBAL EtcZskPrivReturnCode
 Var /GLOBAL EtcZskPubReturnCode
+Var /GLOBAL EtcZskDsReturnCode
 Var /GLOBAL EtcKskReturnCode
 Var /GLOBAL EtcKskPrivReturnCode
 Var /GLOBAL EtcKskPubReturnCode
+Var /GLOBAL EtcKskDsReturnCode
 Var /GLOBAL EtcEncayaReturnCode
 Var /GLOBAL EtcEncayaConfDReturnCode
 Var /GLOBAL EtcEncayaConfReturnCode
@@ -1341,6 +1343,13 @@ Function FilesSecure
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ZSK public key." /SD IDOK
     Abort
   ${EndIf}
+  ${ExecToLog} 'icacls "$INSTDIR\etc\zsk\bit.ds" /reset'
+  Pop $EtcZskDsReturnCode
+  ${If} $EtcZskDsReturnCode != 0
+    DetailPrint "Failed to set ACL on ZSK DS: return code $EtcZskDsReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on ZSK DS." /SD IDOK
+    Abort
+  ${EndIf}
   ${ExecToLog} 'icacls "$INSTDIR\etc\ksk" /reset'
   Pop $EtcKskReturnCode
   ${If} $EtcKskReturnCode != 0
@@ -1360,6 +1369,13 @@ Function FilesSecure
   ${If} $EtcKskPubReturnCode != 0
     DetailPrint "Failed to set ACL on KSK public key: return code $EtcKskPubReturnCode"
     MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on KSK public key." /SD IDOK
+    Abort
+  ${EndIf}
+  ${ExecToLog} 'icacls "$INSTDIR\bit.ds" /reset'
+  Pop $EtcKskDsReturnCode
+  ${If} $EtcKskDsReturnCode != 0
+    DetailPrint "Failed to set ACL on KSK DS: return code $EtcKskDsReturnCode"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to set ACL on KSK DS." /SD IDOK
     Abort
   ${EndIf}
 FunctionEnd
@@ -1513,8 +1529,10 @@ Function un.Files
   Delete $INSTDIR\etc\ncdns.conf
   Delete $INSTDIR\etc\ksk\bit.private
   Delete $INSTDIR\bit.key
+  Delete $INSTDIR\bit.ds
   Delete $INSTDIR\etc\zsk\bit.private
   Delete $INSTDIR\etc\zsk\bit.key
+  Delete $INSTDIR\etc\zsk\bit.ds
   RMDir $INSTDIR\bin
   RMDir $INSTDIR\etc\ncdns.conf.d
   RMDir $INSTDIR\etc\ksk
