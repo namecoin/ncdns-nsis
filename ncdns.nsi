@@ -1960,8 +1960,10 @@ Function TorBrowserConfig
 
   DetailPrint "*** Installing StemNS files..."
   File /oname=$INSTDIR\bin\stemns.py ${NEUTRAL_ARTIFACTS}\stemns\stemns.py
-  File /oname=$INSTDIR\bin\python\settings_services.py ${NEUTRAL_ARTIFACTS}\stemns\settings_services.py
-  File /oname=$INSTDIR\bin\python\settings_port.py ${NEUTRAL_ARTIFACTS}\stemns\settings_port.py
+  CreateDirectory $INSTDIR\bin\config
+  File /oname=$INSTDIR\bin\config\port_const_torbrowser.py ${NEUTRAL_ARTIFACTS}\stemns\config\port_const_torbrowser.py.example
+  File /oname=$INSTDIR\bin\config\exit_self.py ${NEUTRAL_ARTIFACTS}\stemns\config\exit_self.py.example
+  File /oname=$INSTDIR\bin\config\services_namecoin.py ${NEUTRAL_ARTIFACTS}\stemns\services_namecoin.py
 
   DetailPrint "*** Installing winsvcwrap files..."
   File /oname=$INSTDIR\bin\winsvcwrap.exe ${ARTIFACTS}\winsvcwrap.exe
@@ -2040,6 +2042,10 @@ Function un.TorBrowserConfig
 
   # StemNS
   Delete $INSTDIR\bin\stemns.py
+  Delete $INSTDIR\bin\config\port_const_torbrowser.py
+  Delete $INSTDIR\bin\config\exit_self.py
+  Delete $INSTDIR\bin\config\services_namecoin.py
+  RMDir $INSTDIR\bin\config
 
   File /oname=$PLUGINSDIR\unconfigtorbrowser.ps1 unconfigtorbrowser.ps1
   File /oname=$PLUGINSDIR\detecttorbrowser.ps1 detecttorbrowser.ps1

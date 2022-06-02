@@ -103,7 +103,7 @@ task:
     - rm -rf ./stem-git
     # StemNS
     - git clone https://github.com/namecoin/stemns.git ./stemns-git
-    - mv ./stemns-git/stemns.py ./stemns/
+    - mv ./stemns-git/stemns.py ./stemns-git/config ./stemns/
     - rm -rf ./stemns-git
     - cd ../
   build_script:
