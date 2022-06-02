@@ -5,9 +5,7 @@ Put the following files in `build64/artifacts/` or `build32/artifacts/`:
 
   - `ncdns.exe`
   - `certinject.exe`
-  - `dnssec-keygen.exe` and its dependencies (`libcrypto-1_1-x64.dll`, `libdns.dll`, `libisc.dll`, `libisccfg.dll`, `libssl-1_1-x64.dll`, `libxml2.dll`, and `uv.dll`). These files can be sourced here:
-    - Find the latest BIND 9.16.x release under https://ftp.isc.org/isc/bind/ and download
-      `BIND{version}.x64.zip`.
+  - `coredns-keygen.exe` from [Namecoin's fork of coredns-utils](https://github.com/namecoin/coredns-utils-zsk)
   - `dnssec_trigger_setup.exe`
   - `namecoin-win32-setup-unsigned.exe` / `namecoin-win64-setup-unsigned.exe`
   - `electrum-nmc-setup.exe`
@@ -21,7 +19,7 @@ Put the following files in `build64/artifacts/` or `build32/artifacts/`:
 Put the following files in `artifacts/`:
 
   - `stem` Python package
-  - `stemns/stemns.py` from StemNS
+  - `stemns/stemns.py` and `stemns/config/` from StemNS
 
 Build flags:
 
