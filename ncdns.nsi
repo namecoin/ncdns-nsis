@@ -1263,6 +1263,9 @@ Function Files
   File /oname=$INSTDIR\bin\ncdumpzone.exe ${ARTIFACTS}\ncdumpzone.exe
   File /oname=$INSTDIR\bin\generate_nmc_cert.exe ${ARTIFACTS}\generate_nmc_cert.exe
   File /oname=$INSTDIR\bin\q.exe ${ARTIFACTS}\q.exe
+
+  # PKCS#11 modules
+  File /oname=$INSTDIR\bin\ncp11.dll ${ARTIFACTS}\ncp11.dll
 FunctionEnd
 
 Function FilesConfig
@@ -1523,6 +1526,9 @@ Function un.Files
 
   # coredns-utils files
   Delete $INSTDIR\bin\coredns-keygen.exe
+
+  # PKCS#11 modules
+  Delete $INSTDIR\bin\ncp11.dll
 
   Delete $INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf
   Delete $INSTDIR\etc\ncdns.conf.d\xlog.conf
