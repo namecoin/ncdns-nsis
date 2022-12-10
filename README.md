@@ -14,6 +14,7 @@ Put the following files in `build64/artifacts/` or `build32/artifacts/`:
   - `q.exe` from qlib
   - `ncprop279.exe`
   - `winsvcwrap.exe`
+  - `ncp11.dll`
   - `python` folder, containing an unzipped Python embeddable package
 
 Put the following files in `artifacts/`:
