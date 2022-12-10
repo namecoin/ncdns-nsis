@@ -82,8 +82,7 @@ task:
     - mv ncprop279--windows_amd64/bin/*.exe ./
     - rm -rf ncprop279--windows_amd64/
     # winsvcwrap
-    # TODO: This binary is from 2022 March 19; we should switch it to auto-update once it's in the Namecoin org
-    - curl -o winsvcwrap--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/task/4591993857769472/binaries/dist/winsvcwrap--windows_amd64.tar.gz
+    - curl -o winsvcwrap--windows_amd64.tar.gz https://api.cirrus-ci.com/v1/artifact/github/namecoin/winsvcwrap/Cross-Compile%20Go%20latest/binaries/dist/winsvcwrap--windows_amd64.tar.gz
     - tar -xaf winsvcwrap--windows_amd64.tar.gz
     - mv winsvcwrap--windows_amd64/bin/*.exe ./
     - rm -rf winsvcwrap--windows_amd64/
