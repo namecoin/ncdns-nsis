@@ -1,6 +1,7 @@
 Var TLSPositiveDialog
 
 Var TLSPositiveDialog_CryptoAPILayer2
+Var TLSPositiveDialog_FirefoxNcp11Enterprise
 
 Function TLSPositiveDialog_CreateSkeleton
 
@@ -13,7 +14,11 @@ Function TLSPositiveDialog_CreateSkeleton
   !insertmacro MUI_HEADER_TEXT "Censorship-Resistant TLS" "Enable Namecoin TLS connections without certificate errors."
 
   # CryptoAPI Layer 2 CheckBox
-  ${NSD_CreateCheckBox} 0u 0u 100% 100% "CryptoAPI: Works for arbitrary applications that use Windows for certificate verification (e.g. most non-Mozilla browsers).  Only grants ncdns run-time access to a CA constrained to the Namecoin TLD.  If an attacker were able to exploit ncdns, non-Namecoin Internet traffic would be unaffected.  Some already-insecure 3rd-party software might behave insecurely in the presence of ncdns (not an ncdns bug).  Can be shared with other devices."
+  ${NSD_CreateCheckBox} 0u 0u 100% 50% "CryptoAPI: Works for arbitrary applications that use Windows for certificate verification (e.g. most non-Mozilla browsers).  Only grants ncdns run-time access to a CA constrained to the Namecoin TLD.  If an attacker were able to exploit ncdns, non-Namecoin Internet traffic would be unaffected.  Some already-insecure 3rd-party software might behave insecurely in the presence of ncdns (not an ncdns bug).  Can be shared with other devices."
   Pop $TLSPositiveDialog_CryptoAPILayer2
+
+  # Firefox ncp11 Enterprise Policy CheckBox
+  ${NSD_CreateCheckBox} 0u 50% 100% 50% "Mozilla Firefox: Requires that CryptoAPI be ticked as well.  Will take effect next time you start Firefox."
+  Pop $TLSPositiveDialog_FirefoxNcp11Enterprise
 
 FunctionEnd

@@ -115,6 +115,7 @@ Var /GLOBAL TorBrowserDetectReturnCode
 
 Var /GLOBAL CryptoAPIInjectionEnabled
 Var /GLOBAL CryptoAPIEncayaEnabled
+Var /GLOBAL Ncp11EnterpriseFirefoxEnabled
 Var /GLOBAL CryptoAPINameConstraintsEnabled
 Var /GLOBAL JREPath
 Var /GLOBAL JREDetected
@@ -248,6 +249,8 @@ win7okay:
   Pop $CryptoAPIInjectionEnabled
   Push ${BST_CHECKED}
   Pop $CryptoAPIEncayaEnabled
+  Push ${BST_CHECKED}
+  Pop $Ncp11EnterpriseFirefoxEnabled
   Push ${BST_CHECKED}
   Pop $CryptoAPINameConstraintsEnabled
 FunctionEnd
@@ -672,6 +675,7 @@ Function TLSPositiveDialogCreate
   # CertInject temporarily disabled
   #${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
   ${NSD_SetState} $TLSPositiveDialog_CryptoAPILayer2 $CryptoAPIEncayaEnabled
+  ${NSD_SetState} $TLSPositiveDialog_FirefoxNcp11Enterprise $Ncp11EnterpriseFirefoxEnabled
 
   nsDialogs::Show
 FunctionEnd
@@ -680,6 +684,7 @@ Function TLSPositiveDialogLeave
   # CertInject temporarily disabled
   #${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer1 $CryptoAPIInjectionEnabled
   ${NSD_GetState} $TLSPositiveDialog_CryptoAPILayer2 $CryptoAPIEncayaEnabled
+  ${NSD_GetState} $TLSPositiveDialog_FirefoxNcp11Enterprise $Ncp11EnterpriseFirefoxEnabled
 FunctionEnd
 
 Function TLSNegativeDialogCreate
@@ -1528,7 +1533,8 @@ Function un.Files
   Delete $INSTDIR\bin\coredns-keygen.exe
 
   # PKCS#11 modules
-  Delete $INSTDIR\bin\ncp11.dll
+  # TODO: Maybe prompt the user to close Firefox first?
+  Delete /REBOOTOK $INSTDIR\bin\ncp11.dll
 
   Delete $INSTDIR\etc\ncdns.conf.d\electrum-nmc.conf
   Delete $INSTDIR\etc\ncdns.conf.d\xlog.conf
@@ -2092,12 +2098,14 @@ Function TrustConfig
   Call TrustNameConstraintsConfig
   Call TrustEncayaConfig
   Call TrustInjectionConfig
+  Call TrustNcp11Config
 
   DetailPrint "*** CryptoAPI TLS support was configured (if requested)."
 FunctionEnd
 
 Function un.TrustConfig
   Call un.TrustInjectionConfig
+  Call un.TrustNcp11Config
 FunctionEnd
 
 Function TrustEncayaConfig
@@ -2220,6 +2228,30 @@ Function un.TrustInjectionConfig
   Delete $PLUGINSDIR\regperm.ps1
 FunctionEnd
 
+Function TrustNcp11Config
+  ${If} $Ncp11EnterpriseFirefoxEnabled == ${BST_UNCHECKED}
+    DetailPrint "*** Skipping ncp11 config because Firefox support was rejected."
+    Return
+  ${EndIf}
+
+  DetailPrint "*** Configuring Firefox to use ncp11"
+
+  ClearErrors
+  WriteRegStr HKLM "Software\Policies\Mozilla\Firefox\SecurityDevices" "Namecoin TLS Certificate Trust" "$INSTDIR\bin\ncp11.dll"
+  ${If} ${Errors}
+    DetailPrint "Failed to configure Firefox to use ncp11"
+    MessageBox "MB_OK|MB_ICONSTOP" "Failed to configure Firefox to use ncp11." /SD IDOK
+    Abort
+  ${EndIf}
+
+  DetailPrint "*** Configured Firefox to use ncp11"
+FunctionEnd
+
+Function un.TrustNcp11Config
+  DetailPrint "*** Removing ncp11 from Firefox"
+
+  DeleteRegValue HKLM "Software\Policies\Mozilla\Firefox\SecurityDevices" "Namecoin TLS Certificate Trust"
+FunctionEnd
 
 #
 ##############################################################################
